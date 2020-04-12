@@ -30,7 +30,7 @@ function moveopt!(
 
     @inbounds while improvement_found && number_of_moves < 10
         improvement_found = false
-        for i = start_position:length(tour)
+        for i in start_position:length(tour)
             select_vertex = tour[i]
             delete_cost = removal_cost(tour, dist, i)
             set_ind = member[select_vertex]
@@ -69,7 +69,7 @@ function moveopt_rand!(
     setdist::Distsv,
 )
     tour_inds = collect(1:length(tour))
-    @inbounds for i = 1:iters # i = rand(1:length(tour), iters)
+    @inbounds for i in 1:iters # i = rand(1:length(tour), iters)
         i = incremental_shuffle!(tour_inds, i)
         select_vertex = tour[i]
 
@@ -105,7 +105,7 @@ compute the cost of inserting vertex v into position i of tour
     bestpos::Int,
     best_cost::Int,
 )
-    @inbounds for i = 1:length(tour)
+    @inbounds for i in 1:length(tour)
         v1 = prev_tour(tour, i) # first check lower bound
         lb =
             setdist.vert_set[v1, setind] + setdist.set_vert[setind, tour[i]] -
@@ -153,7 +153,7 @@ function opt_cycle!(
 )
     current.cost = tour_cost(current.tour, dist)
     prev_cost = current.cost
-    for i = 1:5
+    for i in 1:5
         if i % 2 == 1
             current.tour = reopt_tour(current.tour, dist, sets, member, param)
         elseif param[:mode] == "fast" || use == "partial"
@@ -190,7 +190,7 @@ function reopt_tour(
     cost_to_come = zeros(Int64, param[:num_vertices])
     @inbounds for start_vertex in sets[member[tour[1]]]
         relax_in!(cost_to_come, dist, prev, Int64[start_vertex], sets[member[tour[2]]])
-        for i = 3:length(tour)  # cost to get to ith set on path through (i-1)th set
+        for i in 3:length(tour)  # cost to get to ith set on path through (i-1)th set
             relax_in!(
                 cost_to_come,
                 dist,
@@ -219,7 +219,7 @@ function min_setv(
     param::Dict{Symbol,Any},
 )
     min_set = param[:min_set]
-    @inbounds for i = 1:length(tour)
+    @inbounds for i in 1:length(tour)
         member[tour[i]] == min_set && return i
     end
     return 1
@@ -253,7 +253,7 @@ does not actually update the cost
     v1 = set1[1]
     min_cost = cost[v1] + dist[v1, v2]
     min_prev = v1
-    @inbounds for i = 2:length(set1)
+    @inbounds for i in 2:length(set1)
         v1 = set1[i]
         newcost = cost[v1] + dist[v1, v2]
         if min_cost > newcost
@@ -278,7 +278,7 @@ relaxes the cost of each vertex in the set set2 in-place.
         v1 = set1[1]
         cost[v2] = cost[v1] + dist[v1, v2]
         prev[v2] = v1
-        for i = 2:length(set1)
+        for i in 2:length(set1)
             v1 = set1[i]
             newcost = cost[v1] + dist[v1, v2]
             if cost[v2] > newcost

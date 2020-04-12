@@ -233,8 +233,8 @@ function read_file(filename)
     if parse_state == "TSPLIB" && data_type != "EXPLICIT"
         # tested
         if data_format == "EUC_2D"
-            for vid00 = 1:num_vertices
-                for vid01 = 1:num_vertices
+            for vid00 in 1:num_vertices
+                for vid01 in 1:num_vertices
                     if vid00 == vid01
                         dist[vid00, vid01] = INF
                     else
@@ -248,8 +248,8 @@ function read_file(filename)
             # not tested
         elseif data_format == "MAN_2D"
             println("Warning: MAN_2D not tested")
-            for vid00 = 1:num_vertices
-                for vid01 = 1:num_vertices
+            for vid00 in 1:num_vertices
+                for vid01 in 1:num_vertices
                     if vid00 == vid01
                         dist[vid00, vid01] = INF
                     else
@@ -266,12 +266,12 @@ function read_file(filename)
             PI = 3.141592
             DEBUG01 = false
             TSPLIB_GEO = true
-            for vid00 = 1:num_vertices
+            for vid00 in 1:num_vertices
                 d, m = degree_minutes(coords[vid00][1])
                 lat00 = PI * (d + 5.0 * m / 3.0) / 180.0
                 d, m = degree_minutes(coords[vid00][2])
                 long00 = PI * (d + 5.0 * m / 3.0) / 180.0
-                for vid01 = 1:num_vertices
+                for vid01 in 1:num_vertices
                     d, m = degree_minutes(coords[vid01][1])
                     lat01 = PI * (d + 5.0 * m / 3.0) / 180.0
                     d, m = degree_minutes(coords[vid01][2])
@@ -320,8 +320,8 @@ function read_file(filename)
             end
             # tested
         elseif data_format == "ATT"
-            for vid00 = 1:num_vertices
-                for vid01 = 1:num_vertices
+            for vid00 in 1:num_vertices
+                for vid01 in 1:num_vertices
                     if vid00 == vid01
                         dist[vid00, vid01] = INF
                     else
@@ -335,8 +335,8 @@ function read_file(filename)
             end
             # tested: not sure if working or not
         elseif data_format == "CEIL_2D"
-            for vid00 = 1:num_vertices
-                for vid01 = 1:num_vertices
+            for vid00 in 1:num_vertices
+                for vid01 in 1:num_vertices
                     if vid00 == vid01
                         dist[vid00, vid01] = INF
                     else
@@ -541,7 +541,7 @@ function progress_bar(trials, progress, cost, time)
     bar_length = min(total_length - 1, (trials - start_number) * ticks)
 
     progress_bar = "|"
-    for i = 1:total_length
+    for i in 1:total_length
         if i == bar_length + 1
             progress_bar *= "|"
         elseif i > bar_length + 1
