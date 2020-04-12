@@ -32,9 +32,9 @@ TSPLIB Parser defined by:
   http://comopt.ifi.uni-heidelberg.de/software/TSPLIB95/TSPFAQ.html
 """
 function read_file(filename)
-	  if !isfile(filename)
-		    error("the problem instance  ", filename, " does not exist")
-	  end
+    if !isfile(filename)
+        error("the problem instance  ", filename, " does not exist")
+    end
 
     # Setup
     INF = 9999
@@ -58,8 +58,8 @@ function read_file(filename)
     for line in readlines(s)
         line = strip(line)
         # debug
-#        println(line)
-#        println(parse_state)
+        #        println(line)
+        #        println(parse_state)
 
         # auto format select
         if parse_state == "UNKNOWN_FORMAT"
@@ -93,7 +93,7 @@ function read_file(filename)
                 parse_state = "TSPLIB_COORD_DATA"
             end
 
-        # Parse matrix data
+            # Parse matrix data
         elseif parse_state == "TSPLIB_MATRIX_DATA"
             if occursin(r"^[\d\se+-\.]+$", line)
                 for x in split(line)
@@ -104,18 +104,18 @@ function read_file(filename)
                         vid01 += 1
                         if vid01 > num_vertices
                             vid00 += 1
-                            vid01  = 1
+                            vid01 = 1
                         end
-                    # tested
+                        # tested
                     elseif data_format == "LOWER_DIAG_ROW"
                         dist[vid00, vid01] = cost
                         dist[vid01, vid00] = cost
                         vid01 += 1
                         if vid01 > vid00
                             vid00 += 1
-                            vid01  = 1
+                            vid01 = 1
                         end
-                    # not tested
+                        # not tested
                     elseif data_format == "LOWER_ROW"
                         println("WARNING: Not tested")
 
@@ -127,18 +127,18 @@ function read_file(filename)
                         vid01 += 1
                         if vid01 >= vid00
                             vid00 += 1
-                            vid01  = 0
+                            vid01 = 0
                         end
-                    # tested
+                        # tested
                     elseif data_format == "UPPER_DIAG_ROW"
                         dist[vid00, vid01] = cost
                         dist[vid01, vid00] = cost
                         vid01 += 1
                         if vid01 > num_vertices
                             vid00 += 1
-                            vid01  = vid00
+                            vid01 = vid00
                         end
-                    # tested
+                        # tested
                     elseif data_format == "UPPER_ROW"
                         if vid00 == 1 && vid01 == 1
                             vid01 = 2
@@ -148,7 +148,7 @@ function read_file(filename)
                         vid01 += 1
                         if vid01 > num_vertices
                             vid00 += 1
-                            vid01  = vid00 + 1
+                            vid01 = vid00 + 1
                         end
                     end
                 end
@@ -158,32 +158,32 @@ function read_file(filename)
                 parse_state = "TSPLIB_SET_DATA"
             end
 
-        # Parse display data
+            # Parse display data
         elseif parse_state == "TSPLIB_DISPLAY_DATA"
             if occursin(r"^\s*GTSP_SET_SECTION\s*:?\s*$", uppercase(line))
                 parse_state = "TSPLIB_SET_DATA"
             end
 
-        # Parse coord data
+            # Parse coord data
         elseif parse_state == "TSPLIB_COORD_DATA"
             if occursin(r"\s*\d+\s*", uppercase(line))
-                coord = [parse(Float64, x) for x = split(line)[2:end]]
+                coord = [parse(Float64, x) for x in split(line)[2:end]]
                 push!(coords, coord)
             elseif occursin(r"^\s*GTSP_SET_SECTION\s*:?\s*$", uppercase(line))
                 parse_state = "TSPLIB_SET_DATA"
             end
 
-        # Parse set data
+            # Parse set data
         elseif parse_state == "TSPLIB_SET_DATA"
             if occursin(r"\d+", uppercase(line))
-                for x = split(line)
+                for x in split(line)
                     push!(set_data, parse(Int64, x))
                 end
             elseif occursin(r"^\s*EOF\s*$", uppercase(line))
                 parse_state = "TSPLIB"
             end
 
-        # Parse header (simple)
+            # Parse header (simple)
         elseif parse_state == "SIMPLE_HEADER"
             if occursin(r"^\s*N\s*:\s*\w+", uppercase(line))
                 value = strip(split(strip(line), ":")[end])
@@ -195,7 +195,7 @@ function read_file(filename)
                 parse_state = "SIMPLE_SETS"
             end
 
-        # Parse set data (simple)
+            # Parse set data (simple)
         elseif parse_state == "SIMPLE_SETS"
             if occursin(r"^[\d\se+-\.]+$", line)
                 sid = parse(Int64, split(line)[1])
@@ -206,7 +206,7 @@ function read_file(filename)
                 end
             end
 
-        # Parse set data (simple)
+            # Parse set data (simple)
         elseif parse_state == "SIMPLE_MATRIX"
             if occursin(r"^[\d\se+-\.]+$", line)
                 for x in split(line)
@@ -215,7 +215,7 @@ function read_file(filename)
                     vid01 += 1
                     if vid01 > num_vertices
                         vid00 += 1
-                        vid01  = 1
+                        vid01 = 1
                     end
                 end
             else
@@ -233,8 +233,8 @@ function read_file(filename)
     if parse_state == "TSPLIB" && data_type != "EXPLICIT"
         # tested
         if data_format == "EUC_2D"
-            for vid00 in 1:num_vertices
-                for vid01 in 1:num_vertices
+            for vid00 = 1:num_vertices
+                for vid01 = 1:num_vertices
                     if vid00 == vid01
                         dist[vid00, vid01] = INF
                     else
@@ -245,11 +245,11 @@ function read_file(filename)
                     end
                 end
             end
-        # not tested
+            # not tested
         elseif data_format == "MAN_2D"
             println("Warning: MAN_2D not tested")
-            for vid00 in 1:num_vertices
-                for vid01 in 1:num_vertices
+            for vid00 = 1:num_vertices
+                for vid01 = 1:num_vertices
                     if vid00 == vid01
                         dist[vid00, vid01] = INF
                     else
@@ -260,67 +260,83 @@ function read_file(filename)
                     end
                 end
             end
-        # not working...
+            # not working...
         elseif data_format == "GEO"
             RRR = 6378.388
             PI = 3.141592
             DEBUG01 = false
             TSPLIB_GEO = true
-            for vid00 in 1:num_vertices
-                d, m    = degree_minutes(coords[vid00][1])
-                lat00   = PI * (d + 5.0 * m / 3.0) / 180.0
-                d, m    = degree_minutes(coords[vid00][2])
-                long00  = PI * (d + 5.0 * m / 3.0) / 180.0
-                for vid01 in 1:num_vertices
-                    d, m    = degree_minutes(coords[vid01][1])
-                    lat01   = PI * (d + 5.0 * m / 3.0) / 180.0
-                    d, m    = degree_minutes(coords[vid01][2])
-                    long01  = PI * (d + 5.0 * m / 3.0) / 180.0
+            for vid00 = 1:num_vertices
+                d, m = degree_minutes(coords[vid00][1])
+                lat00 = PI * (d + 5.0 * m / 3.0) / 180.0
+                d, m = degree_minutes(coords[vid00][2])
+                long00 = PI * (d + 5.0 * m / 3.0) / 180.0
+                for vid01 = 1:num_vertices
+                    d, m = degree_minutes(coords[vid01][1])
+                    lat01 = PI * (d + 5.0 * m / 3.0) / 180.0
+                    d, m = degree_minutes(coords[vid01][2])
+                    long01 = PI * (d + 5.0 * m / 3.0) / 180.0
                     if vid00 == vid01
                         dist[vid00, vid01] = INF
                     else
                         if TSPLIB_GEO
-                            q1      = cos(long00 - long01)
-                            q2      = cos(lat00 - lat01)
-                            q3      = cos(lat00 + lat01)
-                            cost    = RRR * acos(0.5 * ((1.0 + q1) * q2 - (1.0 - q1) * q3)) + 1.0
+                            q1 = cos(long00 - long01)
+                            q2 = cos(lat00 - lat01)
+                            q3 = cos(lat00 + lat01)
+                            cost =
+                                RRR * acos(0.5 * ((1.0 + q1) * q2 - (1.0 - q1) * q3)) + 1.0
                             dist[vid00, vid01] = floor(Int64, cost)
                         else
                             # http://andrew.hedges.name/experiments/haversine/
-                            R       = 6373
-                            dlat    = abs(coords[vid01][1] - coords[vid00][1])
-                            dlong   = abs(coords[vid01][2] - coords[vid00][2])
-                            a       = (sind(dlat / 2))^2 + cosd(coords[vid00][1]) * cosd(coords[vid01][1]) * (sind(dlong / 2))^2
-                            c       = 2 * atan2(sqrt(a), sqrt(1 - a))
-                            cost    = R * c
+                            R = 6373
+                            dlat = abs(coords[vid01][1] - coords[vid00][1])
+                            dlong = abs(coords[vid01][2] - coords[vid00][2])
+                            a =
+                                (sind(dlat / 2))^2 +
+                                cosd(coords[vid00][1]) *
+                                cosd(coords[vid01][1]) *
+                                (sind(dlong / 2))^2
+                            c = 2 * atan2(sqrt(a), sqrt(1 - a))
+                            cost = R * c
                             dist[vid00, vid01] = floor(Int64, cost)
                         end
                         if DEBUG01
-                            println("lat00 = ", coords[vid00][1], ", long00 = ", coords[vid00][2], ", lat01 = ", coords[vid01][1], ", long01 = ", coords[vid01][2], ", dist = ", floor(Int64, cost))
+                            println(
+                                "lat00 = ",
+                                coords[vid00][1],
+                                ", long00 = ",
+                                coords[vid00][2],
+                                ", lat01 = ",
+                                coords[vid01][1],
+                                ", long01 = ",
+                                coords[vid01][2],
+                                ", dist = ",
+                                floor(Int64, cost),
+                            )
                             DEBUG01 = false
                         end
                     end
                 end
             end
-        # tested
+            # tested
         elseif data_format == "ATT"
-            for vid00 in 1:num_vertices
-                for vid01 in 1:num_vertices
+            for vid00 = 1:num_vertices
+                for vid01 = 1:num_vertices
                     if vid00 == vid01
                         dist[vid00, vid01] = INF
                     else
                         dx = coords[vid00][1] - coords[vid01][1]
                         dy = coords[vid00][2] - coords[vid01][2]
-                        r  = sqrt((dx^2 + dy^2) / 10.0)
+                        r = sqrt((dx^2 + dy^2) / 10.0)
                         cost = ceil(r)
                         dist[vid00, vid01] = nint(cost)
                     end
                 end
             end
-        # tested: not sure if working or not
+            # tested: not sure if working or not
         elseif data_format == "CEIL_2D"
-            for vid00 in 1:num_vertices
-                for vid01 in 1:num_vertices
+            for vid00 = 1:num_vertices
+                for vid01 = 1:num_vertices
                     if vid00 == vid01
                         dist[vid00, vid01] = INF
                     else
@@ -362,7 +378,7 @@ function read_file(filename)
         error("must have more than 1 set")
     end
 
-	  membership = findmember(num_vertices, sets)
+    membership = findmember(num_vertices, sets)
 
     return num_vertices, num_sets, sets, dist, membership
 end
@@ -370,13 +386,13 @@ end
 
 """ Computing degrees and minutes for GEO instances """
 function degree_minutes(num)
-	if num > 0
-		deg = floor(Int64, num)
-		return deg, num - deg
-	else
-		deg = ceil(Int64, num)
-		return deg, num - deg
-	end
+    if num > 0
+        deg = floor(Int64, num)
+        return deg, num - deg
+    else
+        deg = ceil(Int64, num)
+        return deg, num - deg
+    end
 end
 
 
@@ -386,23 +402,27 @@ end
 
 """ print the main parameter settings """
 function print_params(param::Dict{Symbol,Any})
-	if param[:print_output] > 0
-		println("\n", "--------- Problem Data ------------")
-		println("Instance Name      : ", param[:problem_instance])
-	    println("Number of Vertices : ", param[:num_vertices])
-	    println("Number of Sets     : ", param[:num_sets])
-		println("Initial Tour       : ", (param[:init_tour] == "rand" ?
-				"Random" : "Random Insertion"))
-		println("Maximum Removals   : ", param[:max_removals])
-		println("Trials             : ", param[:cold_trials])
-		println("Restart Attempts   : ", param[:warm_trials])
-		println("Rate of Adaptation : ", param[:epsilon])
-		println("Prob of Reopt      : ", param[:prob_reopt])
-		println("Maximum Time       : ", param[:max_time])
-		println("Tour Budget        : ", (param[:budget] == typemin(Int64) ?
-				"None" : param[:budget]))
-		println("-----------------------------------\n")
-	end
+    if param[:print_output] > 0
+        println("\n", "--------- Problem Data ------------")
+        println("Instance Name      : ", param[:problem_instance])
+        println("Number of Vertices : ", param[:num_vertices])
+        println("Number of Sets     : ", param[:num_sets])
+        println(
+            "Initial Tour       : ",
+            (param[:init_tour] == "rand" ? "Random" : "Random Insertion"),
+        )
+        println("Maximum Removals   : ", param[:max_removals])
+        println("Trials             : ", param[:cold_trials])
+        println("Restart Attempts   : ", param[:warm_trials])
+        println("Rate of Adaptation : ", param[:epsilon])
+        println("Prob of Reopt      : ", param[:prob_reopt])
+        println("Maximum Time       : ", param[:max_time])
+        println(
+            "Tour Budget        : ",
+            (param[:budget] == typemin(Int64) ? "None" : param[:budget]),
+        )
+        println("-----------------------------------\n")
+    end
 end
 
 
@@ -410,133 +430,178 @@ end
 Print the powers in an easy-to-read format for debugging the adaptive weights
 """
 function print_powers(powers)
-	println("--  Printing powers -- ")
-	println("Insertions:")
-	for power in powers["insertions"]
-		println(power.name, " ", power.value, ": ", power.weight)
-	end
+    println("--  Printing powers -- ")
+    println("Insertions:")
+    for power in powers["insertions"]
+        println(power.name, " ", power.value, ": ", power.weight)
+    end
 
-	println("\n Removals:")
-	for power in powers["removals"]
-		println(power.name, " ", power.value, ": ", power.weight)
-	end
-	print("\n")
+    println("\n Removals:")
+    for power in powers["removals"]
+        println(power.name, " ", power.value, ": ", power.weight)
+    end
+    print("\n")
 
-	println("\n Noises:")
-	for power in powers["noise"]
-		println(power.name, " ", power.value, ": ", power.weight)
-	end
-	print("\n")
+    println("\n Noises:")
+    for power in powers["noise"]
+        println(power.name, " ", power.value, ": ", power.weight)
+    end
+    print("\n")
 end
 
 
 """print statement at the beginning of a cold trial"""
 function print_cold_trial(count::Dict{Symbol,Real}, param::Dict{Symbol,Any}, best::Tour)
-	if param[:print_output] == 2
-		println("\n||--- trial ", count[:cold_trial],
-		" --- initial cost ", best.cost, " ---||")
-	end
+    if param[:print_output] == 2
+        println(
+            "\n||--- trial ",
+            count[:cold_trial],
+            " --- initial cost ",
+            best.cost,
+            " ---||",
+        )
+    end
 end
 
 
 """print details at the end of each warm trial"""
-function print_warm_trial(count::Dict{Symbol,Real}, param::Dict{Symbol,Any},
-							best::Tour, iter_count::Int)
-	if param[:print_output] == 2
-		println("-- ", count[:cold_trial], ".", count[:warm_trial],
-		" - iterations ", iter_count, ":  ", "cost ", best.cost)
-	end
+function print_warm_trial(
+    count::Dict{Symbol,Real},
+    param::Dict{Symbol,Any},
+    best::Tour,
+    iter_count::Int,
+)
+    if param[:print_output] == 2
+        println(
+            "-- ",
+            count[:cold_trial],
+            ".",
+            count[:warm_trial],
+            " - iterations ",
+            iter_count,
+            ":  ",
+            "cost ",
+            best.cost,
+        )
+    end
 end
 
 
 """ print best cost so far """
-function print_best(count::Dict{Symbol,Real}, param::Dict{Symbol,Any},
-							best::Tour, lowest::Tour, init_time::Float64)
-	if param[:print_output] == 1 && time() - count[:print_time] > param[:print_time]
-		count[:print_time] = time()
-		println("-- trial ", count[:cold_trial], ".", count[:warm_trial], ":",
-				"  Cost = ", min(best.cost, lowest.cost),
-				"  Time = ", round(count[:print_time] - init_time, digits = 1), " sec")
+function print_best(
+    count::Dict{Symbol,Real},
+    param::Dict{Symbol,Any},
+    best::Tour,
+    lowest::Tour,
+    init_time::Float64,
+)
+    if param[:print_output] == 1 && time() - count[:print_time] > param[:print_time]
+        count[:print_time] = time()
+        println(
+            "-- trial ",
+            count[:cold_trial],
+            ".",
+            count[:warm_trial],
+            ":",
+            "  Cost = ",
+            min(best.cost, lowest.cost),
+            "  Time = ",
+            round(count[:print_time] - init_time, digits = 1),
+            " sec",
+        )
 
-	elseif (param[:print_output] == 3 && time() - count[:print_time] > 0.5) ||
-		param[:budget_met] || param[:timeout]
+    elseif (param[:print_output] == 3 && time() - count[:print_time] > 0.5) ||
+           param[:budget_met] ||
+           param[:timeout]
 
-		count[:print_time] = time()
-		if param[:warm_trials] > 0
-			progress = (count[:cold_trial] - 1) / param[:cold_trials] +
-	 	   			 (count[:warm_trial]) / param[:warm_trials] / param[:cold_trials]
-		else
-			progress = (count[:cold_trial] - 1) / param[:cold_trials]
-		end
-		tcurr = round(count[:print_time] - init_time, digits = 1)
-		cost = min(best.cost, lowest.cost)
-		progress_bar(param[:cold_trials], progress, cost, tcurr)
-	end
+        count[:print_time] = time()
+        if param[:warm_trials] > 0
+            progress =
+                (count[:cold_trial] - 1) / param[:cold_trials] +
+                (count[:warm_trial]) / param[:warm_trials] / param[:cold_trials]
+        else
+            progress = (count[:cold_trial] - 1) / param[:cold_trials]
+        end
+        tcurr = round(count[:print_time] - init_time, digits = 1)
+        cost = min(best.cost, lowest.cost)
+        progress_bar(param[:cold_trials], progress, cost, tcurr)
+    end
 end
 
 
 """ a string representing the progress bar """
 function progress_bar(trials, progress, cost, time)
-	ticks, trials_per_bar, total_length = 6, 5, 31
-	progress == 1.0 && (progress -= 0.0001)
-	n = floor(Int64, progress * trials / trials_per_bar)
-	start_number = n * trials_per_bar
-	trials_in_bar = min(trials_per_bar, trials - start_number)
+    ticks, trials_per_bar, total_length = 6, 5, 31
+    progress == 1.0 && (progress -= 0.0001)
+    n = floor(Int64, progress * trials / trials_per_bar)
+    start_number = n * trials_per_bar
+    trials_in_bar = min(trials_per_bar, trials - start_number)
 
-	progress_in_bar = (progress * trials - start_number) / trials_in_bar
-	bar_length = min(total_length - 1, (trials - start_number) * ticks)
+    progress_in_bar = (progress * trials - start_number) / trials_in_bar
+    bar_length = min(total_length - 1, (trials - start_number) * ticks)
 
-	progress_bar = "|"
-	for i = 1:total_length
-		if i == bar_length + 1
-			progress_bar *= "|"
-		elseif i > bar_length + 1
-			progress_bar *= " "
-		elseif i % ticks == 1
-			progress_bar *= string(start_number + ceil(Int64, i / ticks))
-		elseif i <= ceil(Int64, bar_length * progress_in_bar)
-			progress_bar *= "="
-		else
-			progress_bar *= " "
-		end
-	end
-	print(" ", progress_bar, "  Cost = ", cost, "  Time = ", time, " sec      \r")
+    progress_bar = "|"
+    for i = 1:total_length
+        if i == bar_length + 1
+            progress_bar *= "|"
+        elseif i > bar_length + 1
+            progress_bar *= " "
+        elseif i % ticks == 1
+            progress_bar *= string(start_number + ceil(Int64, i / ticks))
+        elseif i <= ceil(Int64, bar_length * progress_in_bar)
+            progress_bar *= "="
+        else
+            progress_bar *= " "
+        end
+    end
+    print(" ", progress_bar, "  Cost = ", cost, "  Time = ", time, " sec      \r")
 end
 
 
 """print tour summary at end of execution"""
-function print_summary(lowest::Tour, timer::Float64, member::Array{Int64,1},
-						param::Dict{Symbol,Any})
-	if param[:print_output] == 3 && !param[:timeout] && !param[:budget_met]
-		progress_bar(param[:cold_trials], 1.0, lowest.cost, round(timer, digits = 1))
-	end
-	if param[:print_output] > -1
-		if (param[:print_output] > 0 || param[:output_file] == "None")
-			println("\n\n", "--------- Tour Summary ------------")
-			println("Cost              : ", lowest.cost)
-			println("Total Time        : ", round(timer, digits = 2), " sec")
-			println("Solver Timeout?   : ", param[:timeout])
-			println("Tour is Feasible? : ", tour_feasibility(lowest.tour, member,
-																	param[:num_sets]))
-			order_to_print = (param[:output_file] == "None" ?
-					lowest.tour : "printed to " * param[:output_file])
-			println("Output File       : ",  param[:output_file])
-			println("Tour Ordering     : ",  order_to_print)
-			println("-----------------------------------")
-		end
-		if param[:output_file] != "None"
-			s = open(param[:output_file], "w")
-			write(s, "Problem Instance : ", param[:problem_instance], "\n")
-			write(s, "Vertices         : ", string(param[:num_vertices]), "\n")
-			write(s, "Sets             : ", string(param[:num_sets]), "\n")
-			write(s, "Comment          : To avoid ~0.5sec startup time, use the Julia REPL\n")
-			write(s, "Host Computer    : ", gethostname(), "\n")
-			write(s, "Solver Time      : ", string(round(timer, digits = 3)), " sec\n")
-			write(s, "Tour Cost        : ", string(lowest.cost), "\n")
-			write(s, "Tour             : ", string(lowest.tour))
-			close(s)
-		end
-	end
+function print_summary(
+    lowest::Tour,
+    timer::Float64,
+    member::Array{Int64,1},
+    param::Dict{Symbol,Any},
+)
+    if param[:print_output] == 3 && !param[:timeout] && !param[:budget_met]
+        progress_bar(param[:cold_trials], 1.0, lowest.cost, round(timer, digits = 1))
+    end
+    if param[:print_output] > -1
+        if (param[:print_output] > 0 || param[:output_file] == "None")
+            println("\n\n", "--------- Tour Summary ------------")
+            println("Cost              : ", lowest.cost)
+            println("Total Time        : ", round(timer, digits = 2), " sec")
+            println("Solver Timeout?   : ", param[:timeout])
+            println(
+                "Tour is Feasible? : ",
+                tour_feasibility(lowest.tour, member, param[:num_sets]),
+            )
+            order_to_print = (
+                param[:output_file] == "None" ? lowest.tour :
+                    "printed to " * param[:output_file]
+            )
+            println("Output File       : ", param[:output_file])
+            println("Tour Ordering     : ", order_to_print)
+            println("-----------------------------------")
+        end
+        if param[:output_file] != "None"
+            s = open(param[:output_file], "w")
+            write(s, "Problem Instance : ", param[:problem_instance], "\n")
+            write(s, "Vertices         : ", string(param[:num_vertices]), "\n")
+            write(s, "Sets             : ", string(param[:num_sets]), "\n")
+            write(
+                s,
+                "Comment          : To avoid ~0.5sec startup time, use the Julia REPL\n",
+            )
+            write(s, "Host Computer    : ", gethostname(), "\n")
+            write(s, "Solver Time      : ", string(round(timer, digits = 3)), " sec\n")
+            write(s, "Tour Cost        : ", string(lowest.cost), "\n")
+            write(s, "Tour             : ", string(lowest.tour))
+            close(s)
+        end
+    end
 end
 
 
