@@ -13,7 +13,9 @@
 # limitations under the License.
 module AdvancedGLNS
 export solver
+
 using Random
+
 include("utilities.jl")
 include("parse_print.jl")
 include("tour_optimizations.jl")
@@ -60,17 +62,17 @@ function solver(problem_instance; args...)
 			current = Tour(copy(best.tour), best.cost)
 			temperature = 1.442 * param[:accept_percentage] * best.cost
 			# accept a solution with 50% higher cost with 0.05% change after num_iterations.
-			cooling_rate = ((0.0005 * lowest.cost)/(param[:accept_percentage] *
-									current.cost))^(1/param[:num_iterations])
+			cooling_rate = ((0.0005 * lowest.cost) / (param[:accept_percentage] *
+									current.cost))^(1 / param[:num_iterations])
 
 			if count[:warm_trial]  > 0	  # if warm restart, then use lower temperature
-		        temperature *= cooling_rate^(param[:num_iterations]/2)
+		        temperature *= cooling_rate^(param[:num_iterations] / 2)
 				phase = :late
 			end
 			while count[:latest_improvement] <= (count[:first_improvement] ?
 				  param[:latest_improvement] : param[:first_improvement])
 
-				if iter_count > param[:num_iterations]/2 && phase == :early
+				if iter_count > param[:num_iterations] / 2 && phase == :early
 					phase = :mid  # move to mid phase after half iterations
 				end
 				trial = remove_insert(current, best, dist, membership, setdist, sets, powers, param, phase)
@@ -97,7 +99,7 @@ function solver(problem_instance; args...)
 			    if best.cost <= param[:budget] || time() - init_time > param[:max_time]
 					param[:timeout] = (time() - init_time > param[:max_time])
 					param[:budget_met] = (best.cost <= param[:budget])
-					timer = (time_ns() - start_time)/1.0e9
+					timer = (time_ns() - start_time) / 1.0e9
 					lowest.cost > best.cost && (lowest = best)
 					print_best(count, param, best, lowest, init_time)
 					print_summary(lowest, timer, membership, param)
@@ -122,7 +124,7 @@ function solver(problem_instance; args...)
 		# print_powers(powers)
 
 	end
-	timer = (time_ns() - start_time)/1.0e9
+	timer = (time_ns() - start_time) / 1.0e9
 	print_summary(lowest, timer, membership, param)
 end
 end

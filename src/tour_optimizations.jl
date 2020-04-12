@@ -93,11 +93,11 @@ determine the cost of removing the vertex at position i in the tour
 """
 @inline function removal_cost(tour::Array{Int64, 1}, dist::Array{Int64, 2}, i::Int64)
     if i == 1
-        return dist[tour[end], tour[i]] + dist[tour[i], tour[i+1]] - dist[tour[end], tour[i+1]]
+        return dist[tour[end], tour[i]] + dist[tour[i], tour[i + 1]] - dist[tour[end], tour[i + 1]]
     elseif i == length(tour)
-        return dist[tour[i-1], tour[i]] + dist[tour[i], tour[1]] - dist[tour[i-1], tour[1]]
+        return dist[tour[i - 1], tour[i]] + dist[tour[i], tour[1]] - dist[tour[i - 1], tour[1]]
     else
-        return dist[tour[i-1], tour[i]] + dist[tour[i], tour[i+1]] - dist[tour[i-1], tour[i+1]]
+        return dist[tour[i - 1], tour[i]] + dist[tour[i], tour[i + 1]] - dist[tour[i - 1], tour[i + 1]]
 	end
 end
 
@@ -107,7 +107,7 @@ function opt_cycle!(current::Tour, dist::Array{Int64,2}, sets::Array{Any, 1},
 					member::Array{Int64,1}, param::Dict{Symbol, Any}, setdist::Distsv, use)
 	current.cost = tour_cost(current.tour, dist)
 	prev_cost = current.cost
-	for i=1:5
+	for i = 1:5
 		if i % 2 == 1
 			current.tour = reopt_tour(current.tour, dist, sets, member, param)
 		elseif param[:mode] == "fast" || use == "partial"
@@ -133,14 +133,14 @@ function reopt_tour(tour::Array{Int64,1}, dist::Array{Int64,2}, sets::Array{Any,
     best_tour_cost = tour_cost(tour, dist)
 	new_tour = copy(tour)
 	min_index = min_setv(tour, sets, member, param)	
-    tour = [tour[min_index:end]; tour[1:min_index-1]]
+    tour = [tour[min_index:end]; tour[1:min_index - 1]]
 
     prev = zeros(Int64, param[:num_vertices])   # initialize cost_to_come
     cost_to_come = zeros(Int64, param[:num_vertices])
     @inbounds for start_vertex in sets[member[tour[1]]]
  		relax_in!(cost_to_come, dist, prev, Int64[start_vertex], sets[member[tour[2]]])
         for i = 3:length(tour)  # cost to get to ith set on path through (i-1)th set
-            relax_in!(cost_to_come, dist, prev, sets[member[tour[i-1]]], sets[member[tour[i]]])
+            relax_in!(cost_to_come, dist, prev, sets[member[tour[i - 1]]], sets[member[tour[i]]])
         end
         # find the cost back to the start vertex.
         tour_cost, start_prev = relax(cost_to_come, dist, sets[member[tour[end]]], start_vertex)

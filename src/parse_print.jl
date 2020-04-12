@@ -72,7 +72,7 @@ function read_file(filename)
 
         # Parse Setup
         if parse_state == "TSPLIB_HEADER"
-            value = strip(split(line,":")[end])
+            value = strip(split(line, ":")[end])
             if occursin(r"^\s*NAME\s*:\s*\w+", uppercase(line))
             elseif occursin(r"^\s*TYPE\s*:\s*\w+\s*$", uppercase(line))
             elseif occursin(r"^\s*DIMENSION\s*:\s*\d+\s*$", uppercase(line))
@@ -148,7 +148,7 @@ function read_file(filename)
                         vid01 += 1
                         if vid01 > num_vertices
                             vid00 += 1
-                            vid01  = vid00+1
+                            vid01  = vid00 + 1
                         end
                     end
                 end
@@ -177,7 +177,7 @@ function read_file(filename)
         elseif parse_state == "TSPLIB_SET_DATA"
             if occursin(r"\d+", uppercase(line))
                 for x = split(line)
-                    push!(set_data, parse(Int64,x))
+                    push!(set_data, parse(Int64, x))
                 end
             elseif occursin(r"^\s*EOF\s*$", uppercase(line))
                 parse_state = "TSPLIB"
@@ -186,11 +186,11 @@ function read_file(filename)
         # Parse header (simple)
         elseif parse_state == "SIMPLE_HEADER"
             if occursin(r"^\s*N\s*:\s*\w+", uppercase(line))
-                value = strip(split(strip(line),":")[end])
+                value = strip(split(strip(line), ":")[end])
                 num_vertices = parse(Int64, value)
                 dist = zeros(Int64, num_vertices, num_vertices)
             elseif occursin(r"^\s*M\s*:\s*\d+\s*$", uppercase(line))
-                value = strip(split(strip(line),":")[end])
+                value = strip(split(strip(line), ":")[end])
                 num_sets = parse(Int64, value)
                 parse_state = "SIMPLE_SETS"
             end
@@ -290,8 +290,8 @@ function read_file(filename)
                             R       = 6373
                             dlat    = abs(coords[vid01][1] - coords[vid00][1])
                             dlong   = abs(coords[vid01][2] - coords[vid00][2])
-                            a       = (sind(dlat/2))^2 + cosd(coords[vid00][1])*cosd(coords[vid01][1])*(sind(dlong/2))^2
-                            c       = 2*atan2(sqrt(a), sqrt(1-a))
+                            a       = (sind(dlat / 2))^2 + cosd(coords[vid00][1]) * cosd(coords[vid01][1]) * (sind(dlong / 2))^2
+                            c       = 2 * atan2(sqrt(a), sqrt(1 - a))
                             cost    = R * c
                             dist[vid00, vid01] = floor(Int64, cost)
                         end
@@ -311,7 +311,7 @@ function read_file(filename)
                     else
                         dx = coords[vid00][1] - coords[vid01][1]
                         dy = coords[vid00][2] - coords[vid01][2]
-                        r  = sqrt((dx^2 + dy^2)/10.0)
+                        r  = sqrt((dx^2 + dy^2) / 10.0)
                         cost = ceil(r)
                         dist[vid00, vid01] = nint(cost)
                     end
@@ -456,19 +456,19 @@ function print_best(count::Dict{Symbol,Real}, param::Dict{Symbol,Any},
 		count[:print_time] = time()
 		println("-- trial ", count[:cold_trial], ".", count[:warm_trial], ":",
 				"  Cost = ", min(best.cost, lowest.cost),
-				"  Time = ", round(count[:print_time] - init_time, digits=1), " sec")
+				"  Time = ", round(count[:print_time] - init_time, digits = 1), " sec")
 
 	elseif (param[:print_output] == 3 && time() - count[:print_time] > 0.5) ||
 		param[:budget_met] || param[:timeout]
 
 		count[:print_time] = time()
 		if param[:warm_trials] > 0
-			progress = (count[:cold_trial] - 1)/param[:cold_trials] +
-	 	   			 (count[:warm_trial])/param[:warm_trials]/param[:cold_trials]
+			progress = (count[:cold_trial] - 1) / param[:cold_trials] +
+	 	   			 (count[:warm_trial]) / param[:warm_trials] / param[:cold_trials]
 		else
-			progress = (count[:cold_trial] - 1)/param[:cold_trials]
+			progress = (count[:cold_trial] - 1) / param[:cold_trials]
 		end
-		tcurr = round(count[:print_time] - init_time, digits=1)
+		tcurr = round(count[:print_time] - init_time, digits = 1)
 		cost = min(best.cost, lowest.cost)
 		progress_bar(param[:cold_trials], progress, cost, tcurr)
 	end
@@ -479,15 +479,15 @@ end
 function progress_bar(trials, progress, cost, time)
 	ticks, trials_per_bar, total_length = 6, 5, 31
 	progress == 1.0 && (progress -= 0.0001)
-	n = floor(Int64, progress * trials/trials_per_bar)
+	n = floor(Int64, progress * trials / trials_per_bar)
 	start_number = n * trials_per_bar
 	trials_in_bar = min(trials_per_bar, trials - start_number)
 
-	progress_in_bar = (progress * trials - start_number)/trials_in_bar
+	progress_in_bar = (progress * trials - start_number) / trials_in_bar
 	bar_length = min(total_length - 1, (trials - start_number) * ticks)
 
 	progress_bar = "|"
-	for i=1:total_length
+	for i = 1:total_length
 		if i == bar_length + 1
 			progress_bar *= "|"
 		elseif i > bar_length + 1
@@ -508,13 +508,13 @@ end
 function print_summary(lowest::Tour, timer::Float64, member::Array{Int64,1},
 						param::Dict{Symbol,Any})
 	if param[:print_output] == 3 && !param[:timeout] && !param[:budget_met]
-		progress_bar(param[:cold_trials], 1.0, lowest.cost, round(timer, digits=1))
+		progress_bar(param[:cold_trials], 1.0, lowest.cost, round(timer, digits = 1))
 	end
 	if param[:print_output] > -1
 		if (param[:print_output] > 0 || param[:output_file] == "None")
 			println("\n\n", "--------- Tour Summary ------------")
 			println("Cost              : ", lowest.cost)
-			println("Total Time        : ", round(timer, digits=2), " sec")
+			println("Total Time        : ", round(timer, digits = 2), " sec")
 			println("Solver Timeout?   : ", param[:timeout])
 			println("Tour is Feasible? : ", tour_feasibility(lowest.tour, member,
 																	param[:num_sets]))
@@ -531,7 +531,7 @@ function print_summary(lowest::Tour, timer::Float64, member::Array{Int64,1},
 			write(s, "Sets             : ", string(param[:num_sets]), "\n")
 			write(s, "Comment          : To avoid ~0.5sec startup time, use the Julia REPL\n")
 			write(s, "Host Computer    : ", gethostname(), "\n")
-			write(s, "Solver Time      : ", string(round(timer, digits=3)), " sec\n")
+			write(s, "Solver Time      : ", string(round(timer, digits = 3)), " sec\n")
 			write(s, "Tour Cost        : ", string(lowest.cost), "\n")
 			write(s, "Tour             : ", string(lowest.tour))
 			close(s)

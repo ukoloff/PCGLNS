@@ -32,12 +32,12 @@ function parameter_settings(num_vertices, num_sets, sets, problem_instance, args
 
 		:prob_reopt => get(args, :reopt, 1.0),
 		:accept_percentage => 0.05,
-		:prob_accept => 10.0/num_iterations,
+		:prob_accept => 10.0 / num_iterations,
 
 		:num_iterations => num_iterations,
-		:latest_improvement => num_iterations/2,
-		:first_improvement => num_iterations/4,
-		:max_removals => min(100, max(round(Int64, 0.3*num_sets), 1)),
+		:latest_improvement => num_iterations / 2,
+		:first_improvement => num_iterations / 4,
+		:max_removals => min(100, max(round(Int64, 0.3 * num_sets), 1)),
 		:insertions => ["randpdf", "cheapest"],
 		)
 			
@@ -53,12 +53,12 @@ function parameter_settings(num_vertices, num_sets, sets, problem_instance, args
 
 		:prob_reopt => get(args, :reopt, 0.2),
 		:accept_percentage => 0.05,
-		:prob_accept => 10.0/num_iterations,
+		:prob_accept => 10.0 / num_iterations,
 
 		:num_iterations => num_iterations,
-		:latest_improvement => num_iterations/4,
-		:first_improvement => num_iterations/6,
-		:max_removals => min(20, max(round(Int64, 0.1*num_sets), 1)),
+		:latest_improvement => num_iterations / 4,
+		:first_improvement => num_iterations / 6,
+		:max_removals => min(20, max(round(Int64, 0.1 * num_sets), 1)),
 		:insertions => ["randpdf"],
 		)
 	
@@ -73,12 +73,12 @@ function parameter_settings(num_vertices, num_sets, sets, problem_instance, args
 
 		:prob_reopt => get(args, :reopt, 1.0),
 		:accept_percentage => 0.05,
-		:prob_accept => 10.0/num_iterations,
+		:prob_accept => 10.0 / num_iterations,
 
 		:num_iterations => num_iterations,
-		:latest_improvement => num_iterations/3,
-		:first_improvement => num_iterations/6,
-		:max_removals => max(round(Int64, 0.4*num_sets), 1),
+		:latest_improvement => num_iterations / 3,
+		:first_improvement => num_iterations / 6,
+		:max_removals => max(round(Int64, 0.4 * num_sets), 1),
 		:insertions => ["randpdf", "cheapest"],
 		)
 		
