@@ -23,15 +23,19 @@ include("adaptive_powers.jl")
 include("insertion_deletion.jl")
 include("parameter_defaults.jl")
 
+const global EPS = 1.0e9
+
 """
 Main GTSP solver, which takes as input a problem instance and
-some optional arguments
+some optional arguments.
 """
 function solver(problem_instance; args...)
-    ###### Read problem data and solver settings ########
-    num_vertices, num_sets, sets, dist, membership = read_file(problem_instance)
+
+    # Read problem data and solver settings.
+    num_vertices, num_sets, sets, set_orderings, dist, membership =
+        read_file(problem_instance)
     param = parameter_settings(num_vertices, num_sets, sets, problem_instance, args)
-    #####################################################
+
     init_time = time()
     count = Dict(
         :latest_improvement => 1,
@@ -43,14 +47,26 @@ function solver(problem_instance; args...)
     )
     lowest = Tour(Int64[], typemax(Int64))
     start_time = time_ns()
-    # compute set distances which will be helpful
+
+    # Compute set distances which will be helpful.
     setdist = set_vertex_dist(dist, num_sets, membership)
     powers = initialize_powers(param)
 
     while count[:cold_trial] <= param[:cold_trials]
-        # build tour from scratch on a cold restart
-        best = initial_tour!(lowest, dist, sets, setdist, count[:cold_trial], param)
-        # print_cold_trial(count, param, best)
+
+        # Build tour from scratch on a cold restart.
+        best = initial_tour!(
+            lowest,
+            dist,
+            sets,
+            set_orderings,
+            setdist,
+            count[:cold_trial],
+            membership,
+            param,
+        )
+
+        # Print_cold_trial(count, param, best).
         phase = :early
 
         if count[:cold_trial] == 1
@@ -63,23 +79,26 @@ function solver(problem_instance; args...)
             iter_count = 1
             current = Tour(copy(best.tour), best.cost)
             temperature = 1.442 * param[:accept_percentage] * best.cost
-            # accept a solution with 50% higher cost with 0.05% change after num_iterations.
+
+            # Accept a solution with 50% higher cost with 0.05% change after num_iterations.
             cooling_rate =
                 (
                     (0.0005 * lowest.cost) / (param[:accept_percentage] * current.cost)
                 )^(1 / param[:num_iterations])
 
-            if count[:warm_trial] > 0  # if warm restart, then use lower temperature
+            # If warm restart, then use lower temperature.
+            if count[:warm_trial] > 0
                 temperature *= cooling_rate^(param[:num_iterations] / 2)
                 phase = :late
             end
+
             while count[:latest_improvement] <= (
                 count[:first_improvement] ? param[:latest_improvement] :
                 param[:first_improvement]
             )
-
+                # Move to mid phase after half iterations.
                 if iter_count > param[:num_iterations] / 2 && phase == :early
-                    phase = :mid  # move to mid phase after half iterations
+                    phase = :mid
                 end
                 trial = remove_insert(
                     current,
@@ -93,7 +112,7 @@ function solver(problem_instance; args...)
                     phase,
                 )
 
-                # decide whether or not to accept trial
+                # Decide whether or not to accept trial.
                 if accepttrial_noparam(trial.cost, current.cost, param[:prob_accept]) ||
                    accepttrial(trial.cost, current.cost, temperature)
                     param[:mode] == "slow" &&
@@ -112,36 +131,37 @@ function solver(problem_instance; args...)
                     count[:latest_improvement] += 1
                 end
 
-                # if we've come in under budget, or we're out of time, then exit
+                # If we've come in under budget, or we're out of time, then exit.
                 if best.cost <= param[:budget] || time() - init_time > param[:max_time]
                     param[:timeout] = (time() - init_time > param[:max_time])
                     param[:budget_met] = (best.cost <= param[:budget])
-                    timer = (time_ns() - start_time) / 1.0e9
+                    timer = (time_ns() - start_time) / EPS
                     lowest.cost > best.cost && (lowest = best)
                     print_best(count, param, best, lowest, init_time)
                     print_summary(lowest, timer, membership, param)
                     return
                 end
 
-                temperature *= cooling_rate  # cool the temperature
+                # Cool the temperature.
+                temperature *= cooling_rate
                 iter_count += 1
                 count[:total_iter] += 1
                 print_best(count, param, best, lowest, init_time)
             end
+
+            # On the first cold trial, we are just determining.
             print_warm_trial(count, param, best, iter_count)
-            # on the first cold trial, we are just determining
             count[:warm_trial] += 1
             count[:latest_improvement] = 1
             count[:first_improvement] = false
         end
+
         lowest.cost > best.cost && (lowest = best)
         count[:warm_trial] = 0
         count[:cold_trial] += 1
-
-        # print_powers(powers)
-
     end
-    timer = (time_ns() - start_time) / 1.0e9
+
+    timer = (time_ns() - start_time) / EPS
     print_summary(lowest, timer, membership, param)
 end
 end

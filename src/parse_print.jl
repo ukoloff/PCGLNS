@@ -46,6 +46,7 @@ function read_file(filename)
     data_type = ""
     data_format = ""
     dist = zeros(Int64, 0, 0)
+    set_orderings = zeros(Int64, 0, 0)
     sets = Any[]
     vid00 = vid01 = 1
     coords = Any[]
@@ -78,6 +79,7 @@ function read_file(filename)
             elseif occursin(r"^\s*DIMENSION\s*:\s*\d+\s*$", uppercase(line))
                 num_vertices = parse(Int64, value)
                 dist = zeros(Int64, num_vertices, num_vertices)
+                set_orderings = zeros(Int64, num_vertices, num_vertices)
             elseif occursin(r"^\s*GTSP_SETS\s*:\s*\d+\s*$", uppercase(line))
                 num_sets = parse(Int64, value)
             elseif occursin(r"^\s*EDGE_WEIGHT_TYPE\s*:\s*\w+\s*$", uppercase(line))
@@ -179,6 +181,27 @@ function read_file(filename)
                 for x in split(line)
                     push!(set_data, parse(Int64, x))
                 end
+            elseif occursin(r"^\s*GTSP_SET_ORDERING\s*:?\s*$", uppercase(line))
+                parse_state = "GTSP_SET_ORDERING"
+            elseif occursin(r"^\s*EOF\s*$", uppercase(line))
+                parse_state = "TSPLIB"
+            end
+
+            # Parse set ordering data.
+        elseif parse_state == "GTSP_SET_ORDERING"
+            if occursin(r"\d+", uppercase(line))
+                line_arr = split(line)
+                set_idx_str, rest = Iterators.peel(line_arr)
+                set_idx = parse(Int64, set_idx_str)
+                for set_to_precede_idx_str in rest
+                    set_to_precede_idx = parse(Int64, set_to_precede_idx_str)
+                    if set_to_precede_idx < 1
+                        break
+                    end
+                    set_orderings[set_idx, set_to_precede_idx] = -1
+                    set_orderings[set_to_precede_idx, set_idx] = 1
+                    # push!(set_orderings[set_idx], set_to_precede_idx)
+                end
             elseif occursin(r"^\s*EOF\s*$", uppercase(line))
                 parse_state = "TSPLIB"
             end
@@ -225,6 +248,7 @@ function read_file(filename)
 
     end
     close(s)
+
     if occursin(r"TSPLIB", parse_state)
         parse_state = "TSPLIB"
     end
@@ -355,7 +379,6 @@ function read_file(filename)
     # construct sets
     if parse_state == "TSPLIB"
         i = 1
-        sid00 = 1
         set = Int64[]
         set_data = set_data[2:end]
         while i <= length(set_data)
@@ -380,7 +403,7 @@ function read_file(filename)
 
     membership = findmember(num_vertices, sets)
 
-    return num_vertices, num_sets, sets, dist, membership
+    return num_vertices, num_sets, sets, set_orderings, dist, membership
 end
 
 
