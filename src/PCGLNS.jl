@@ -36,6 +36,9 @@ function solver(problem_instance; args...)
         read_file(problem_instance)
     param = parameter_settings(num_vertices, num_sets, sets, problem_instance, args)
 
+    # order_constraints = Array{Constraints, 1}(Constraints(Set{Int64}(), Set{Int64}()), num_sets)
+    order_constraints = calc_order_constraints(sets, set_orderings)
+
     init_time = time()
     count = Dict(
         :latest_improvement => 1,
@@ -59,7 +62,7 @@ function solver(problem_instance; args...)
             lowest,
             dist,
             sets,
-            set_orderings,
+            order_constraints,
             setdist,
             count[:cold_trial],
             membership,
@@ -107,7 +110,7 @@ function solver(problem_instance; args...)
                     membership,
                     setdist,
                     sets,
-                    set_orderings,
+                    order_constraints,
                     powers,
                     param,
                     phase,
@@ -117,7 +120,7 @@ function solver(problem_instance; args...)
                 if accepttrial_noparam(trial.cost, current.cost, param[:prob_accept]) ||
                    accepttrial(trial.cost, current.cost, temperature)
                     param[:mode] == "slow" &&
-                    opt_cycle!(current, dist, sets, set_orderings, membership, param, setdist, "full")
+                    opt_cycle!(current, dist, sets, order_constraints, membership, param, setdist, "full")
                     current = trial
                 end
                 if current.cost < best.cost
@@ -126,7 +129,7 @@ function solver(problem_instance; args...)
                     if count[:cold_trial] > 1 && count[:warm_trial] > 1
                         count[:warm_trial] = 1
                     end
-                    opt_cycle!(current, dist, sets, set_orderings, membership, param, setdist, "full")
+                    opt_cycle!(current, dist, sets, order_constraints, membership, param, setdist, "full")
                     best = current
                 else
                     count[:latest_improvement] += 1

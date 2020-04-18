@@ -24,7 +24,7 @@ function remove_insert(
     member::Array{Int64,1},
     setdist::Distsv,
     sets::Array{Any,1},
-    set_orderings::Array{Int64,2},
+    order_constraints::Array{Constraints, 1},
     powers,
     param::Dict{Symbol,Any},
     phase::Symbol,
@@ -52,7 +52,7 @@ function remove_insert(
 
     # FIXME: Preceedence constraints?
     if insertion.name == "cheapest"
-        cheapest_insertion!(trial.tour, sets_to_insert, dist, setdist, sets, set_orderings, member)
+        cheapest_insertion!(trial.tour, sets_to_insert, dist, setdist, sets, order_constraints, member)
     else
         randpdf_insertion!(
             trial.tour,
@@ -60,14 +60,14 @@ function remove_insert(
             dist,
             setdist,
             sets,
-            set_orderings,
+            order_constraints,
             member,
             insertion.value,
             noise,
         )
     end
     rand() < param[:prob_reopt] &&
-    opt_cycle!(trial, dist, sets, set_orderings, member, param, setdist, "partial")
+    opt_cycle!(trial, dist, sets, order_constraints, member, param, setdist, "partial")
 
     # update power scores for remove and insert
     score = 100 * max(current.cost - trial.cost, 0) / current.cost
@@ -131,7 +131,7 @@ function randpdf_insertion!(
     dist::Array{Int64,2},
     setdist::Distsv,
     sets::Array{Any,1},
-    set_orderings::Array{Int64,2},
+    order_constraints::Array{Constraints, 1},
     member::Array{Int64,1},
     power::Float64,
     noise::Power,
@@ -163,19 +163,7 @@ function randpdf_insertion!(
         # find the closest vertex and the best insertion in that vertex
         nearest_set = sets_to_insert[set_index]
 
-        min_insert_idx = 1
-        max_insert_idx = length(tour)
-        ascendants, descendants = get_relative_ordering(nearest_set, set_orderings)
-        for (index, vert) in enumerate(tour)
-            if in(member[vert], ascendants)
-                min_insert_idx = index + 1
-            elseif in(member[vert], descendants) && max_insert_idx == length(tour)
-                max_insert_idx = index
-            end
-        end
-        if max_insert_idx < min_insert_idx
-           max_insert_idx = min_insert_idx
-        end
+        min_insert_idx, max_insert_idx = calc_bounds(tour, nearest_set, order_constraints, member)
 
         if noise.name == "subset"
             bestv, bestpos = insert_subset_lb(
@@ -219,7 +207,7 @@ function cheapest_insertion!(
     dist::Array{Int64,2},
     setdist::Distsv,
     sets::Array{Any,1},
-    set_orderings::Array{Int64,2},
+    order_constraints::Array{Constraints, 1},
     member::Array{Int64,1},
 )
     # mmbs = [member[i] for i in tour]
@@ -233,19 +221,7 @@ function cheapest_insertion!(
         for i in 1:length(sets_to_insert)
             set_ind = sets_to_insert[i]
 
-            min_insert_idx = 1
-            max_insert_idx = length(tour)
-            ascendants, descendants = get_relative_ordering(set_ind, set_orderings)
-            for (index, vert) in enumerate(tour)
-                if in(member[vert], ascendants)
-                    min_insert_idx = index + 1
-                elseif in(member[vert], descendants) && max_insert_idx == length(tour)
-                    max_insert_idx = index
-                end
-            end
-            if max_insert_idx < min_insert_idx
-               max_insert_idx = min_insert_idx
-            end
+            min_insert_idx, max_insert_idx = calc_bounds(tour, set_ind, order_constraints, member)
             
             # find the best place to insert the vertex
             best_v, best_pos, cost = insert_cost_lb(
@@ -358,7 +334,7 @@ function initial_tour!(
     lowest::Tour,
     dist::Array{Int64,2},
     sets::Array{Any,1},
-    set_orderings::Array{Int64,2},
+    order_constraints::Array{Constraints, 1},
     setdist::Distsv,
     trial_num::Int64,
     member::Array{Int64,1},
@@ -370,14 +346,14 @@ function initial_tour!(
     # compute random initial tour only if past first trial
     # in this case, randomly choose between random and insertion tour.
     if param[:init_tour] == "rand" && (trial_num > 1) && (rand() < 0.5)
-        random_initial_tour!(best.tour, sets_to_insert, dist, sets, set_orderings, member)
+        random_initial_tour!(best.tour, sets_to_insert, dist, sets, order_constraints, member)
     else
         random_insertion!(
             best.tour,
             sets_to_insert,
             dist,
             sets,
-            set_orderings,
+            order_constraints,
             setdist,
             member,
         )
@@ -385,42 +361,6 @@ function initial_tour!(
     best.cost = tour_cost(best.tour, dist)
     lowest.cost > best.cost && (lowest = best)
     return best
-end
-
-
-function get_relative_ordering(set_idx::Int64, set_orderings::Array{Int64,2})
-    ascendants = Set{Int64}()
-    descendants = Set{Int64}()
-
-    # FIXME: Inline funcs.
-    # Ascendants.
-    path = Set{Int64}()
-    push!(path, set_idx)
-    while !isempty(path)
-        x = pop!(path)
-        for (idx, ordering) in enumerate(set_orderings[x, :])
-            if ordering == 1
-                push!(path, idx)
-                push!(ascendants, idx)
-            end
-        end
-    end
-
-    # Descendants.
-    path = Set{Int64}()
-    push!(path, set_idx)
-    while !isempty(path)
-        x = pop!(path)
-        for (idx, ordering) in enumerate(set_orderings[x, :])
-            if set_orderings[x, idx] == -1
-                push!(path, idx)
-                push!(descendants, idx)
-            end
-        end
-    end
-
-    # FIXME: ref params
-    return ascendants, descendants
 end
 
 
@@ -433,7 +373,7 @@ function random_insertion!(
     sets_to_insert::Array{Int64,1},
     dist::Array{Int64,2},
     sets::Array{Any,1},
-    set_orderings::Array{Int64,2},
+    order_constraints::Array{Constraints, 1},
     setdist::Distsv,
     member::Array{Int64,1},
 )
@@ -445,16 +385,7 @@ function random_insertion!(
         rnd_set_idx = rand(1:length(to_insert))
         rnd_set = to_insert[rnd_set_idx]
 
-        min_insert_idx = 1
-        max_insert_idx = length(tour)
-        ascendants, descendants = get_relative_ordering(rnd_set, set_orderings)
-        for (index, vert) in enumerate(tour)
-            if in(member[vert], ascendants)
-                min_insert_idx = index + 1
-            elseif in(member[vert], descendants) && max_insert_idx == length(tour)
-                max_insert_idx = index
-            end
-        end
+        min_insert_idx, max_insert_idx = calc_bounds(tour, rnd_set, order_constraints, member)
 
         # Only have to compute the insert cost for the changed portion of the tour.
         if min_insert_idx > length(tour)
@@ -495,7 +426,7 @@ function random_initial_tour!(
     sets_to_insert::Array{Int64,1},
     dist::Array{Int64,2},
     sets::Array{Any,1},
-    set_orderings::Array{Int64,2},
+    order_constraints::Array{Constraints, 1},
     member::Array{Int64,1},
 )
     shuffle!(sets_to_insert)
@@ -505,20 +436,7 @@ function random_initial_tour!(
         rnd_set_idx = rand(1:length(to_insert))
         rnd_set = to_insert[rnd_set_idx]
 
-        min_insert_idx = 1
-        max_insert_idx = length(tour)
-        ascendants, descendants = get_relative_ordering(rnd_set, set_orderings)
-        for (index, vert) in enumerate(tour)
-            if in(member[vert], ascendants)
-                min_insert_idx = index + 1
-            elseif in(member[vert], descendants) && max_insert_idx == length(tour)
-                max_insert_idx = index
-            end
-        end
-
-        if max_insert_idx < min_insert_idx
-           max_insert_idx = min_insert_idx
-        end
+        min_insert_idx, max_insert_idx = calc_bounds(tour, rnd_set, order_constraints, member)
 
         idx_to_insert = rand(min_insert_idx:max_insert_idx)
         vert_to_insert = rand(sets[rnd_set])
