@@ -136,9 +136,6 @@ function randpdf_insertion!(
     power::Float64,
     noise::Power,
 )
-    # mmbs = [member[i] for i in tour]
-    # println("randpdf_insertion: 0: $tour ($mmbs)")
-
     mindist = [typemax(Int64) for i in 1:length(sets_to_insert)]
     @inbounds for i in 1:length(sets_to_insert)
         set = sets_to_insert[i]
@@ -192,9 +189,6 @@ function randpdf_insertion!(
         splice!(sets_to_insert, set_index)
         splice!(mindist, set_index)
     end
-
-    # mmbs = [member[i] for i in tour]
-    # println("randpdf_insertion: 1: $tour ($mmbs)\n")
 end
 
 
@@ -210,9 +204,6 @@ function cheapest_insertion!(
     order_constraints::Array{Constraints, 1},
     member::Array{Int64,1},
 )
-    # mmbs = [member[i] for i in tour]
-    # println("cheapest_insertion: 0: $tour ($mmbs)")
-
     while length(sets_to_insert) > 0
         best_cost = typemax(Int64)
         best_v = 0
@@ -247,9 +238,6 @@ function cheapest_insertion!(
         # remove the inserted set from data structures
         splice!(sets_to_insert, best_set)
     end
-
-    # mmbs = [member[i] for i in tour]
-    # println("cheapest_insertion: 1: $tour ($mmbs)\n")
 end
 
 
@@ -411,9 +399,6 @@ function random_insertion!(
         insert!(tour, best_position, best_vertex)
         deleteat!(to_insert, rnd_set_idx)
     end
-    
-    # mmbs = [member[i] for i in tour]
-    # println("random_insertion: result: $tour ($mmbs)")
 end
 
 
@@ -443,9 +428,6 @@ function random_initial_tour!(
         insert!(tour, idx_to_insert, vert_to_insert)
         deleteat!(to_insert, rnd_set_idx)
     end
-
-    # mmbs = [member[i] for i in tour]
-    # println("random_initial_tour: result: $tour ($mmbs)")
 end
 
 
