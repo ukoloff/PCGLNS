@@ -67,7 +67,7 @@ function remove_insert(
         )
     end
     rand() < param[:prob_reopt] &&
-    opt_cycle!(trial, dist, sets, member, param, setdist, "partial")
+    opt_cycle!(trial, dist, sets, set_orderings, member, param, setdist, "partial")
 
     # update power scores for remove and insert
     score = 100 * max(current.cost - trial.cost, 0) / current.cost
@@ -136,6 +136,9 @@ function randpdf_insertion!(
     power::Float64,
     noise::Power,
 )
+    # mmbs = [member[i] for i in tour]
+    # println("randpdf_insertion: 0: $tour ($mmbs)")
+
     mindist = [typemax(Int64) for i in 1:length(sets_to_insert)]
     @inbounds for i in 1:length(sets_to_insert)
         set = sets_to_insert[i]
@@ -160,17 +163,19 @@ function randpdf_insertion!(
         # find the closest vertex and the best insertion in that vertex
         nearest_set = sets_to_insert[set_index]
 
-        # found = false
-        # min_insert_idx = 1
-        # max_insert_idx = -1
-        # ascendants, descendants = get_relative_ordering(nearest_set, set_orderings)
-        # for (index, vert) in enumerate(tour)
-        #     if in(member[vert], ascendants)
-        #         min_insert_idx = index + 1
-        #     elseif in(member[vert], descendants) && max_insert_idx == -1
-        #         max_insert_idx = index
-        #     end
-        # end
+        min_insert_idx = 1
+        max_insert_idx = length(tour)
+        ascendants, descendants = get_relative_ordering(nearest_set, set_orderings)
+        for (index, vert) in enumerate(tour)
+            if in(member[vert], ascendants)
+                min_insert_idx = index + 1
+            elseif in(member[vert], descendants) && max_insert_idx == length(tour)
+                max_insert_idx = index
+            end
+        end
+        if max_insert_idx < min_insert_idx
+           max_insert_idx = min_insert_idx
+        end
 
         if noise.name == "subset"
             bestv, bestpos = insert_subset_lb(
@@ -187,8 +192,8 @@ function randpdf_insertion!(
                 dist,
                 sets[nearest_set],
                 nearest_set,
-                1, # min_insert_idx,
-                length(tour), # max_insert_idx,
+                min_insert_idx,
+                max_insert_idx,
                 setdist,
                 noise.value,
             )
@@ -199,6 +204,9 @@ function randpdf_insertion!(
         splice!(sets_to_insert, set_index)
         splice!(mindist, set_index)
     end
+
+    # mmbs = [member[i] for i in tour]
+    # println("randpdf_insertion: 1: $tour ($mmbs)\n")
 end
 
 
@@ -214,6 +222,9 @@ function cheapest_insertion!(
     set_orderings::Array{Int64,2},
     member::Array{Int64,1},
 )
+    # mmbs = [member[i] for i in tour]
+    # println("cheapest_insertion: 0: $tour ($mmbs)")
+
     while length(sets_to_insert) > 0
         best_cost = typemax(Int64)
         best_v = 0
@@ -221,6 +232,21 @@ function cheapest_insertion!(
         best_set = 0
         for i in 1:length(sets_to_insert)
             set_ind = sets_to_insert[i]
+
+            min_insert_idx = 1
+            max_insert_idx = length(tour)
+            ascendants, descendants = get_relative_ordering(set_ind, set_orderings)
+            for (index, vert) in enumerate(tour)
+                if in(member[vert], ascendants)
+                    min_insert_idx = index + 1
+                elseif in(member[vert], descendants) && max_insert_idx == length(tour)
+                    max_insert_idx = index
+                end
+            end
+            if max_insert_idx < min_insert_idx
+               max_insert_idx = min_insert_idx
+            end
+            
             # find the best place to insert the vertex
             best_v, best_pos, cost = insert_cost_lb(
                 tour,
@@ -228,6 +254,8 @@ function cheapest_insertion!(
                 sets[set_ind],
                 set_ind,
                 setdist,
+                min_insert_idx,
+                max_insert_idx,
                 best_v,
                 best_pos,
                 best_cost,
@@ -243,6 +271,9 @@ function cheapest_insertion!(
         # remove the inserted set from data structures
         splice!(sets_to_insert, best_set)
     end
+
+    # mmbs = [member[i] for i in tour]
+    # println("cheapest_insertion: 1: $tour ($mmbs)\n")
 end
 
 
@@ -414,7 +445,6 @@ function random_insertion!(
         rnd_set_idx = rand(1:length(to_insert))
         rnd_set = to_insert[rnd_set_idx]
 
-        found = false
         min_insert_idx = 1
         max_insert_idx = length(tour)
         ascendants, descendants = get_relative_ordering(rnd_set, set_orderings)
@@ -451,8 +481,8 @@ function random_insertion!(
         deleteat!(to_insert, rnd_set_idx)
     end
     
-    mmbs = [member[i] for i in tour]
-    println("random_insertion: result: $tour ($mmbs)")
+    # mmbs = [member[i] for i in tour]
+    # println("random_insertion: result: $tour ($mmbs)")
 end
 
 
@@ -475,7 +505,6 @@ function random_initial_tour!(
         rnd_set_idx = rand(1:length(to_insert))
         rnd_set = to_insert[rnd_set_idx]
 
-        found = false
         min_insert_idx = 1
         max_insert_idx = length(tour)
         ascendants, descendants = get_relative_ordering(rnd_set, set_orderings)
@@ -497,8 +526,8 @@ function random_initial_tour!(
         deleteat!(to_insert, rnd_set_idx)
     end
 
-    mmbs = [member[i] for i in tour]
-    println("random_initial_tour: result: $tour ($mmbs)")
+    # mmbs = [member[i] for i in tour]
+    # println("random_initial_tour: result: $tour ($mmbs)")
 end
 
 

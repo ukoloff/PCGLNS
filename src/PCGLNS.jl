@@ -117,7 +117,7 @@ function solver(problem_instance; args...)
                 if accepttrial_noparam(trial.cost, current.cost, param[:prob_accept]) ||
                    accepttrial(trial.cost, current.cost, temperature)
                     param[:mode] == "slow" &&
-                    opt_cycle!(current, dist, sets, membership, param, setdist, "full")
+                    opt_cycle!(current, dist, sets, set_orderings, membership, param, setdist, "full")
                     current = trial
                 end
                 if current.cost < best.cost
@@ -126,7 +126,7 @@ function solver(problem_instance; args...)
                     if count[:cold_trial] > 1 && count[:warm_trial] > 1
                         count[:warm_trial] = 1
                     end
-                    opt_cycle!(current, dist, sets, membership, param, setdist, "full")
+                    opt_cycle!(current, dist, sets, set_orderings, membership, param, setdist, "full")
                     best = current
                 else
                     count[:latest_improvement] += 1

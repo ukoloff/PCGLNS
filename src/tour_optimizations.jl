@@ -21,6 +21,7 @@ function moveopt!(
     tour::Array{Int64,1},
     dist::Array{Int64,2},
     sets::Array{Any,1},
+    set_orderings::Array{Int64,2},
     member::Array{Int64,1},
     setdist::Distsv,
 )
@@ -36,6 +37,20 @@ function moveopt!(
             set_ind = member[select_vertex]
             splice!(tour, i)  # remove vertex from tour
 
+            min_insert_idx = 1
+            max_insert_idx = length(tour)
+            ascendants, descendants = get_relative_ordering(set_ind, set_orderings)
+            for (index, vert) in enumerate(tour)
+                if in(member[vert], ascendants)
+                    min_insert_idx = index + 1
+                elseif in(member[vert], descendants) && max_insert_idx == length(tour)
+                    max_insert_idx = index
+                end
+            end
+            if max_insert_idx < min_insert_idx
+                max_insert_idx = min_insert_idx
+            end
+
             # find the best place to insert the vertex
             v, pos, cost = insert_cost_lb(
                 tour,
@@ -43,6 +58,8 @@ function moveopt!(
                 sets[set_ind],
                 set_ind,
                 setdist,
+                min_insert_idx,
+                max_insert_idx,
                 select_vertex,
                 i,
                 delete_cost,
@@ -64,6 +81,7 @@ function moveopt_rand!(
     tour::Array{Int64,1},
     dist::Array{Int64,2},
     sets::Array{Any,1},
+    set_orderings::Array{Int64,2},
     member::Array{Int64,1},
     iters::Int,
     setdist::Distsv,
@@ -77,12 +95,29 @@ function moveopt_rand!(
         delete_cost = removal_cost(tour, dist, i)
         set_ind = member[select_vertex]
         splice!(tour, i)  # remove vertex from tour
+
+        min_insert_idx = 1
+        max_insert_idx = length(tour)
+        ascendants, descendants = get_relative_ordering(set_ind, set_orderings)
+        for (index, vert) in enumerate(tour)
+            if in(member[vert], ascendants)
+                min_insert_idx = index + 1
+            elseif in(member[vert], descendants) && max_insert_idx == length(tour)
+                max_insert_idx = index
+            end
+        end
+        if max_insert_idx < min_insert_idx
+            max_insert_idx = min_insert_idx
+        end
+
         v, pos, cost = insert_cost_lb(
             tour,
             dist,
             sets[set_ind],
             set_ind,
             setdist,
+            min_insert_idx,
+            max_insert_idx,
             select_vertex,
             i,
             delete_cost,
@@ -101,11 +136,13 @@ compute the cost of inserting vertex v into position i of tour
     set::Array{Int64,1},
     setind::Int,
     setdist::Distsv,
+    min_insert_idx::Int,
+    max_insert_idx::Int,
     bestv::Int,
     bestpos::Int,
     best_cost::Int,
 )
-    @inbounds for i in 1:length(tour)
+    @inbounds for i in min_insert_idx:max_insert_idx
         v1 = prev_tour(tour, i) # first check lower bound
         lb =
             setdist.vert_set[v1, setind] + setdist.set_vert[setind, tour[i]] -
@@ -146,6 +183,7 @@ function opt_cycle!(
     current::Tour,
     dist::Array{Int64,2},
     sets::Array{Any,1},
+    set_orderings::Array{Int64,2},
     member::Array{Int64,1},
     param::Dict{Symbol,Any},
     setdist::Distsv,
@@ -157,9 +195,9 @@ function opt_cycle!(
         if i % 2 == 1
             current.tour = reopt_tour(current.tour, dist, sets, member, param)
         elseif param[:mode] == "fast" || use == "partial"
-            moveopt_rand!(current.tour, dist, sets, member, param[:max_removals], setdist)
+            moveopt_rand!(current.tour, dist, sets, set_orderings, member, param[:max_removals], setdist)
         else
-            moveopt!(current.tour, dist, sets, member, setdist)
+            moveopt!(current.tour, dist, sets, set_orderings, member, setdist)
         end
         current.cost = tour_cost(current.tour, dist)
         if i > 1 && (current.cost >= prev_cost || use == "partial")
