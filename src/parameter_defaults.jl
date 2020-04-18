@@ -25,7 +25,7 @@ function parameter_settings(num_vertices, num_sets, sets, problem_instance, args
     if mode == "default"
         num_iterations = get(args, :num_iterations, 60) * num_sets
         param = Dict(
-            :cold_trials => get(args, :trials, 5),
+            :cold_trials => get(args, :trials, 15),
             :warm_trials => get(args, :restarts, 3),
             :max_time => get(args, :max_time, 360),
             :init_tour => get(args, :init_tour, "rand"),

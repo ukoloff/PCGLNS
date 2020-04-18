@@ -1,6 +1,6 @@
-using AdvancedGLNS
+using PCGLNS
 using Test
 
-@testset "AdvancedGLNS.jl" begin
+@testset "PCGLNS.jl" begin
     # Write your own tests here.
 end

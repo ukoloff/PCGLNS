@@ -2,7 +2,7 @@
 
 
 # TODO: Register package.
-include("src/AdvancedGLNS.jl")
+include("src/PCGLNS.jl")
 
 
 """
@@ -80,4 +80,4 @@ end
 
 # running the code on the problem instance passed in via command line args.
 problem_instance, optional_args = parse_cmd(ARGS)
-AdvancedGLNS.solver(problem_instance; optional_args...)
+PCGLNS.solver(problem_instance; optional_args...)
