@@ -35,6 +35,7 @@ function moveopt!(
             select_vertex = tour[i]
             delete_cost = removal_cost(tour, dist, i)
             set_ind = member[select_vertex]
+            # tour_b = copy(tour)
             splice!(tour, i)  # remove vertex from tour
 
             min_insert_idx, max_insert_idx = calc_bounds(tour, set_ind, order_constraints, member)
@@ -60,6 +61,14 @@ function moveopt!(
                 start_position = min(pos, i) # start looking for swaps where tour change began
                 break
             end
+            # if tour_b != tour
+            #     println("moveopt")
+            #     println("Tour Ordering b : ", tour_b)
+            #     println("Set Ordering  b : ", [member[i] for i in tour_b])
+            #     println("Tour Ordering a : ", tour)
+            #     println("Set Ordering  a : ", [member[i] for i in tour])
+            #     exit(0)
+            # end
         end
     end
 end
@@ -78,6 +87,8 @@ function moveopt_rand!(
     @inbounds for i in 1:iters # i = rand(1:length(tour), iters)
         i = incremental_shuffle!(tour_inds, i)
         select_vertex = tour[i]
+
+        # tour_b = copy(tour)
 
         # first check if this vertex should be moved
         delete_cost = removal_cost(tour, dist, i)
@@ -99,6 +110,14 @@ function moveopt_rand!(
             delete_cost,
         )
         insert!(tour, pos, v)
+        # if tour_b != tour
+        #     println("moveopt_rand")
+        #     println("Tour Ordering b : ", tour_b)
+        #     println("Set Ordering  b : ", [member[i] for i in tour_b])
+        #     println("Tour Ordering a : ", tour)
+        #     println("Set Ordering  a : ", [member[i] for i in tour])
+        #     exit(0)
+        # end
     end
 end
 
@@ -168,9 +187,11 @@ function opt_cycle!(
     current.cost = tour_cost(current.tour, dist)
     prev_cost = current.cost
     for i in 1:5
-        if i % 2 == 1
-            current.tour = reopt_tour(current.tour, dist, sets, member, param)
-        elseif param[:mode] == "fast" || use == "partial"
+        # FIXME: reopt_tour
+        # if i % 2 == 1
+        #     current.tour = reopt_tour(current.tour, dist, sets, member, param)
+        # elseif param[:mode] == "fast" || use == "partial"
+        if param[:mode] == "fast" || use == "partial"
             moveopt_rand!(current.tour, dist, sets, order_constraints, member, param[:max_removals], setdist)
         else
             moveopt!(current.tour, dist, sets, order_constraints, member, setdist)
@@ -195,6 +216,7 @@ function reopt_tour(
     member::Array{Int64,1},
     param::Dict{Symbol,Any},
 )
+    # println("before reopt_tour: ", [member[i] for i in tour])
     best_tour_cost = tour_cost(tour, dist)
     new_tour = copy(tour)
     min_index = min_setv(tour, sets, member, param)
@@ -221,6 +243,7 @@ function reopt_tour(
             new_tour = extract_tour(prev, start_vertex, start_prev)
         end
     end
+    # println("after reopt_tour: ", [member[i] for i in new_tour])
     return new_tour
 end
 

@@ -57,6 +57,7 @@ function get_relative_ordering(
             end
         end
     end
+    constraints.ascendants = unique(constraints.ascendants)
 
     # Descendants.
     path = Set{Int64}()
@@ -70,6 +71,7 @@ function get_relative_ordering(
             end
         end
     end
+    constraints.descendants = unique(constraints.descendants)
 end
 
 
