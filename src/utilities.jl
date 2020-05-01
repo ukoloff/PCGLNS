@@ -260,7 +260,7 @@ end
 
 """  Compute the length of a tour  """
 @inline function tour_cost(tour::Array{Int64,1}, dist::Array{Int64,2})
-    tour_length = dist[tour[end], tour[1]]
+    tour_length = max(dist[tour[end], tour[1]], 0)
     @inbounds for i in 1:length(tour)-1
         tour_length += dist[tour[i], tour[i+1]]
     end

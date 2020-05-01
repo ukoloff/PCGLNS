@@ -35,17 +35,8 @@ function solver(problem_instance; args...)
     num_vertices, num_sets, sets, set_orderings, dist, membership =
         read_file(problem_instance)
     param = parameter_settings(num_vertices, num_sets, sets, problem_instance, args)
-
-    # order_constraints = Array{Constraints, 1}(Constraints(Set{Int64}(), Set{Int64}()), num_sets)
-    # for tmp in set_orderings
-    #     println(tmp)
-    # end
+    
     order_constraints = calc_order_constraints(sets, set_orderings)
-
-    # for tmp in order_constraints
-    #     println(tmp)
-    # end
-    # exit(0)
 
     init_time = time()
     count = Dict(

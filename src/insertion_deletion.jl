@@ -50,7 +50,6 @@ function remove_insert(
     insertion = power_select(powers["insertions"], powers["insertion_total"], phase)
     noise = power_select(powers["noise"], powers["noise_total"], phase)
 
-    # FIXME: Preceedence constraints?
     if insertion.name == "cheapest"
         cheapest_insertion!(trial.tour, sets_to_insert, dist, setdist, sets, order_constraints, member)
     else
@@ -206,16 +205,18 @@ function cheapest_insertion!(
 )
     while length(sets_to_insert) > 0
         best_cost = typemax(Int64)
+        curr_v = 0
+        curr_pos = 0
+        best_set = 0
         best_v = 0
         best_pos = 0
-        best_set = 0
         for i in 1:length(sets_to_insert)
             set_ind = sets_to_insert[i]
 
             min_insert_idx, max_insert_idx = calc_bounds(tour, set_ind, order_constraints, member)
             
             # find the best place to insert the vertex
-            best_v, best_pos, cost = insert_cost_lb(
+            curr_v, curr_pos, cost = insert_cost_lb(
                 tour,
                 dist,
                 sets[set_ind],
@@ -223,13 +224,15 @@ function cheapest_insertion!(
                 setdist,
                 min_insert_idx,
                 max_insert_idx,
-                best_v,
-                best_pos,
+                curr_v,
+                curr_pos,
                 best_cost,
             )
             if cost < best_cost
                 best_set = i
                 best_cost = cost
+                best_v = curr_v
+                best_pos = curr_pos
             end
         end
 
@@ -259,6 +262,20 @@ best_position is i, then vertex should be inserted between tour[i-1] and tour[i]
     best_cost = typemax(Int64)
     bestv = 0
     bestpos = 0
+
+    if min_insert_idx == max_insert_idx && max_insert_idx == length(tour) + 1
+        v1 = tour[length(tour)]
+        for v in set
+            insert_cost = dist[v1, v]
+            noise > 0.0 && (insert_cost += round(Int64, noise * rand() * abs(insert_cost)))
+            if insert_cost < best_cost
+                best_cost = insert_cost
+                bestv = v
+            end
+        end
+        bestpos = max_insert_idx
+        return bestv, bestpos
+    end
 
     @inbounds for i in min_insert_idx:max_insert_idx
         v1 = prev_tour(tour, i)

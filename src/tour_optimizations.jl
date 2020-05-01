@@ -35,7 +35,6 @@ function moveopt!(
             select_vertex = tour[i]
             delete_cost = removal_cost(tour, dist, i)
             set_ind = member[select_vertex]
-            # tour_b = copy(tour)
             splice!(tour, i)  # remove vertex from tour
 
             min_insert_idx, max_insert_idx = calc_bounds(tour, set_ind, order_constraints, member)
@@ -53,6 +52,7 @@ function moveopt!(
                 i,
                 delete_cost,
             )
+            
             insert!(tour, pos, v)
             # check if we found a better position for vertex i
             if cost < delete_cost
@@ -61,14 +61,6 @@ function moveopt!(
                 start_position = min(pos, i) # start looking for swaps where tour change began
                 break
             end
-            # if tour_b != tour
-            #     println("moveopt")
-            #     println("Tour Ordering b : ", tour_b)
-            #     println("Set Ordering  b : ", [member[i] for i in tour_b])
-            #     println("Tour Ordering a : ", tour)
-            #     println("Set Ordering  a : ", [member[i] for i in tour])
-            #     exit(0)
-            # end
         end
     end
 end
@@ -88,15 +80,11 @@ function moveopt_rand!(
         i = incremental_shuffle!(tour_inds, i)
         select_vertex = tour[i]
 
-        # tour_b = copy(tour)
-
-        # first check if this vertex should be moved
         delete_cost = removal_cost(tour, dist, i)
         set_ind = member[select_vertex]
         splice!(tour, i)  # remove vertex from tour
 
         min_insert_idx, max_insert_idx = calc_bounds(tour, set_ind, order_constraints, member)
-
         v, pos, cost = insert_cost_lb(
             tour,
             dist,
@@ -110,14 +98,6 @@ function moveopt_rand!(
             delete_cost,
         )
         insert!(tour, pos, v)
-        # if tour_b != tour
-        #     println("moveopt_rand")
-        #     println("Tour Ordering b : ", tour_b)
-        #     println("Set Ordering  b : ", [member[i] for i in tour_b])
-        #     println("Tour Ordering a : ", tour)
-        #     println("Set Ordering  a : ", [member[i] for i in tour])
-        #     exit(0)
-        # end
     end
 end
 
@@ -137,6 +117,19 @@ compute the cost of inserting vertex v into position i of tour
     bestpos::Int,
     best_cost::Int,
 )
+    if min_insert_idx == max_insert_idx && max_insert_idx == length(tour) + 1
+        v1 = tour[length(tour)]
+        for v in set
+            insert_cost = dist[v1, v]
+            if insert_cost < best_cost
+                best_cost = insert_cost
+                bestv = v
+            end
+        end
+        bestpos = max_insert_idx
+        return bestv, bestpos, best_cost
+    end
+
     @inbounds for i in min_insert_idx:max_insert_idx
         v1 = prev_tour(tour, i) # first check lower bound
         lb =
@@ -216,7 +209,6 @@ function reopt_tour(
     member::Array{Int64,1},
     param::Dict{Symbol,Any},
 )
-    # println("before reopt_tour: ", [member[i] for i in tour])
     best_tour_cost = tour_cost(tour, dist)
     new_tour = copy(tour)
     min_index = min_setv(tour, sets, member, param)
@@ -243,7 +235,6 @@ function reopt_tour(
             new_tour = extract_tour(prev, start_vertex, start_prev)
         end
     end
-    # println("after reopt_tour: ", [member[i] for i in new_tour])
     return new_tour
 end
 
