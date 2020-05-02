@@ -21,7 +21,7 @@ function moveopt!(
     tour::Array{Int64,1},
     dist::Array{Int64,2},
     sets::Array{Any,1},
-    order_constraints::Array{Constraints, 1},
+    order_constraints::Array{Constraints,1},
     member::Array{Int64,1},
     setdist::Distsv,
 )
@@ -37,7 +37,8 @@ function moveopt!(
             set_ind = member[select_vertex]
             splice!(tour, i)  # remove vertex from tour
 
-            min_insert_idx, max_insert_idx = calc_bounds(tour, set_ind, order_constraints, member)
+            min_insert_idx, max_insert_idx =
+                calc_bounds(tour, set_ind, order_constraints, member)
 
             # find the best place to insert the vertex
             v, pos, cost = insert_cost_lb(
@@ -52,7 +53,7 @@ function moveopt!(
                 i,
                 delete_cost,
             )
-            
+
             insert!(tour, pos, v)
             # check if we found a better position for vertex i
             if cost < delete_cost
@@ -70,7 +71,7 @@ function moveopt_rand!(
     tour::Array{Int64,1},
     dist::Array{Int64,2},
     sets::Array{Any,1},
-    order_constraints::Array{Constraints, 1},
+    order_constraints::Array{Constraints,1},
     member::Array{Int64,1},
     iters::Int,
     setdist::Distsv,
@@ -84,7 +85,8 @@ function moveopt_rand!(
         set_ind = member[select_vertex]
         splice!(tour, i)  # remove vertex from tour
 
-        min_insert_idx, max_insert_idx = calc_bounds(tour, set_ind, order_constraints, member)
+        min_insert_idx, max_insert_idx =
+            calc_bounds(tour, set_ind, order_constraints, member)
         v, pos, cost = insert_cost_lb(
             tour,
             dist,
@@ -171,7 +173,7 @@ function opt_cycle!(
     current::Tour,
     dist::Array{Int64,2},
     sets::Array{Any,1},
-    order_constraints::Array{Constraints, 1},
+    order_constraints::Array{Constraints,1},
     member::Array{Int64,1},
     param::Dict{Symbol,Any},
     setdist::Distsv,
@@ -185,7 +187,15 @@ function opt_cycle!(
         #     current.tour = reopt_tour(current.tour, dist, sets, member, param)
         # elseif param[:mode] == "fast" || use == "partial"
         if param[:mode] == "fast" || use == "partial"
-            moveopt_rand!(current.tour, dist, sets, order_constraints, member, param[:max_removals], setdist)
+            moveopt_rand!(
+                current.tour,
+                dist,
+                sets,
+                order_constraints,
+                member,
+                param[:max_removals],
+                setdist,
+            )
         else
             moveopt!(current.tour, dist, sets, order_constraints, member, setdist)
         end

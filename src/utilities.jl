@@ -42,7 +42,7 @@ end
 function get_relative_ordering(
     set_idx::Int64,
     set_orderings::Array{Int64,2},
-    constraints::Constraints
+    constraints::Constraints,
 )
     # FIXME: Inline funcs.
     # Ascendants.
@@ -75,12 +75,9 @@ function get_relative_ordering(
 end
 
 
-function calc_order_constraints(
-    sets::Array{Any,1},
-    set_orderings::Array{Int64,2},
-)
+function calc_order_constraints(sets::Array{Any,1}, set_orderings::Array{Int64,2})
     sets_length = length(sets)
-    order_constraints = Array{Constraints, 1}(undef, sets_length)
+    order_constraints = Array{Constraints,1}(undef, sets_length)
     for set_idx in 1:sets_length
         new_constraints = Constraints(Int64[], Int64[])
         get_relative_ordering(set_idx, set_orderings, new_constraints)
@@ -94,7 +91,7 @@ end
 function calc_bounds(
     tour::Array{Int64,1},
     set_idx::Int64,
-    order_constraints::Array{Constraints, 1},
+    order_constraints::Array{Constraints,1},
     member::Array{Int64,1},
 )
     min_insert_idx = 1
@@ -102,7 +99,8 @@ function calc_bounds(
     for (index, vert) in enumerate(tour)
         if in(member[vert], order_constraints[set_idx].ascendants)
             min_insert_idx = index + 1
-        elseif in(member[vert], order_constraints[set_idx].descendants) && max_insert_idx == length(tour)
+        elseif in(member[vert], order_constraints[set_idx].descendants) &&
+               max_insert_idx == length(tour)
             max_insert_idx = index
         end
     end

@@ -35,7 +35,7 @@ function solver(problem_instance; args...)
     num_vertices, num_sets, sets, set_orderings, dist, membership =
         read_file(problem_instance)
     param = parameter_settings(num_vertices, num_sets, sets, problem_instance, args)
-    
+
     order_constraints = calc_order_constraints(sets, set_orderings)
 
     init_time = time()
@@ -118,8 +118,16 @@ function solver(problem_instance; args...)
                 # Decide whether or not to accept trial.
                 if accepttrial_noparam(trial.cost, current.cost, param[:prob_accept]) ||
                    accepttrial(trial.cost, current.cost, temperature)
-                    param[:mode] == "slow" &&
-                    opt_cycle!(current, dist, sets, order_constraints, membership, param, setdist, "full")
+                    param[:mode] == "slow" && opt_cycle!(
+                        current,
+                        dist,
+                        sets,
+                        order_constraints,
+                        membership,
+                        param,
+                        setdist,
+                        "full",
+                    )
                     current = trial
                 end
                 if current.cost < best.cost
@@ -128,7 +136,16 @@ function solver(problem_instance; args...)
                     if count[:cold_trial] > 1 && count[:warm_trial] > 1
                         count[:warm_trial] = 1
                     end
-                    opt_cycle!(current, dist, sets, order_constraints, membership, param, setdist, "full")
+                    opt_cycle!(
+                        current,
+                        dist,
+                        sets,
+                        order_constraints,
+                        membership,
+                        param,
+                        setdist,
+                        "full",
+                    )
                     best = current
                 else
                     count[:latest_improvement] += 1
