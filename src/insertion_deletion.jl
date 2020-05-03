@@ -28,6 +28,7 @@ function remove_insert(
     powers,
     param::Dict{Symbol,Any},
     phase::Symbol,
+    start_set::Int64,
 )
     # make a new tour to perform the insertion and deletion on
     trial = Tour(copy(current.tour), current.cost)
@@ -37,12 +38,12 @@ function remove_insert(
     removal = power_select(powers["removals"], powers["removal_total"], phase)
     if removal.name == "distance"
         sets_to_insert =
-            distance_removal!(trial.tour, dist, num_removals, member, removal.value)
+            distance_removal!(trial.tour, dist, num_removals, member, removal.value, start_set)
     elseif removal.name == "worst"
         sets_to_insert =
-            worst_removal!(trial.tour, dist, num_removals, member, removal.value)
+            worst_removal!(trial.tour, dist, num_removals, member, removal.value, start_set)
     else
-        sets_to_insert = segment_removal!(trial.tour, num_removals, member)
+        sets_to_insert = segment_removal!(trial.tour, num_removals, member, start_set)
     end
 
     randomize_sets!(sets, sets_to_insert)
@@ -59,6 +60,7 @@ function remove_insert(
             sets,
             order_constraints,
             member,
+            start_set,
         )
     else
         randpdf_insertion!(
@@ -71,10 +73,11 @@ function remove_insert(
             member,
             insertion.value,
             noise,
+            start_set,
         )
     end
     rand() < param[:prob_reopt] &&
-    opt_cycle!(trial, dist, sets, order_constraints, member, param, setdist, "partial")
+    opt_cycle!(trial, dist, sets, order_constraints, member, param, setdist, "partial", start_set)
 
     # update power scores for remove and insert
     score = 100 * max(current.cost - trial.cost, 0) / current.cost
@@ -142,6 +145,7 @@ function randpdf_insertion!(
     member::Array{Int64,1},
     power::Float64,
     noise::Power,
+    start_set::Int64,
 )
     mindist = [typemax(Int64) for i in 1:length(sets_to_insert)]
     @inbounds for i in 1:length(sets_to_insert)
@@ -169,6 +173,13 @@ function randpdf_insertion!(
 
         min_insert_idx, max_insert_idx =
             calc_bounds(tour, nearest_set, order_constraints, member)
+
+        if nearest_set != start_set
+            min_insert_idx = max(min_insert_idx, 2)
+            if max_insert_idx < min_insert_idx
+                max_insert_idx = min_insert_idx
+            end
+        end
 
         if noise.name == "subset"
             bestv, bestpos = insert_subset_lb(
@@ -211,6 +222,7 @@ function cheapest_insertion!(
     sets::Array{Any,1},
     order_constraints::Array{Constraints,1},
     member::Array{Int64,1},
+    start_set::Int64,
 )
     while length(sets_to_insert) > 0
         best_cost = typemax(Int64)
@@ -224,6 +236,13 @@ function cheapest_insertion!(
 
             min_insert_idx, max_insert_idx =
                 calc_bounds(tour, set_ind, order_constraints, member)
+
+            if set_ind != start_set
+                min_insert_idx = max(min_insert_idx, 2)
+                if max_insert_idx < min_insert_idx
+                    max_insert_idx = min_insert_idx
+                end
+            end
 
             # find the best place to insert the vertex
             curr_v, curr_pos, cost = insert_cost_lb(
@@ -354,6 +373,7 @@ function initial_tour!(
     trial_num::Int64,
     member::Array{Int64,1},
     param::Dict{Symbol,Any},
+    start_set::Int64,
 )
     sets_to_insert = collect(1:param[:num_sets])
     best = Tour(Int64[], typemax(Int64))
@@ -368,6 +388,7 @@ function initial_tour!(
             sets,
             order_constraints,
             member,
+            start_set,
         )
     else
         random_insertion!(
@@ -378,6 +399,7 @@ function initial_tour!(
             order_constraints,
             setdist,
             member,
+            start_set,
         )
     end
     best.cost = tour_cost(best.tour, dist)
@@ -398,17 +420,32 @@ function random_insertion!(
     order_constraints::Array{Constraints,1},
     setdist::Distsv,
     member::Array{Int64,1},
+    start_set::Int64,
 )
     # Randomly permute the sets.
     shuffle!(sets_to_insert)
     pushed_cnt = 0
     to_insert = copy(sets_to_insert)
     while !isempty(to_insert)
-        rnd_set_idx = rand(1:length(to_insert))
-        rnd_set = to_insert[rnd_set_idx]
+        pushed_cnt += 1
+
+        if pushed_cnt == 1
+            rnd_set_idx = findfirst(x -> x == start_set, to_insert)
+            rnd_set = to_insert[rnd_set_idx]
+        else
+            rnd_set_idx = rand(1:length(to_insert))
+            rnd_set = to_insert[rnd_set_idx]
+        end
 
         min_insert_idx, max_insert_idx =
             calc_bounds(tour, rnd_set, order_constraints, member)
+
+        if pushed_cnt > 1
+            min_insert_idx = max(min_insert_idx, 2)
+            if max_insert_idx < min_insert_idx
+                max_insert_idx = min_insert_idx
+            end
+        end
 
         # Only have to compute the insert cost for the changed portion of the tour.
         if min_insert_idx > length(tour)
@@ -448,16 +485,31 @@ function random_initial_tour!(
     sets::Array{Any,1},
     order_constraints::Array{Constraints,1},
     member::Array{Int64,1},
+    start_set::Int64,
 )
     shuffle!(sets_to_insert)
     pushed_cnt = 0
     to_insert = copy(sets_to_insert)
     while !isempty(to_insert)
-        rnd_set_idx = rand(1:length(to_insert))
-        rnd_set = to_insert[rnd_set_idx]
+        pushed_cnt += 1
+
+        if pushed_cnt == 1
+            rnd_set_idx = findfirst(x -> x == start_set, to_insert)
+            rnd_set = to_insert[rnd_set_idx]
+        else
+            rnd_set_idx = rand(1:length(to_insert))
+            rnd_set = to_insert[rnd_set_idx]
+        end
 
         min_insert_idx, max_insert_idx =
             calc_bounds(tour, rnd_set, order_constraints, member)
+
+        if pushed_cnt > 1
+            min_insert_idx = max(min_insert_idx, 2)
+            if max_insert_idx < min_insert_idx
+                max_insert_idx = min_insert_idx
+            end
+        end
 
         idx_to_insert = rand(min_insert_idx:max_insert_idx)
         vert_to_insert = rand(sets[rnd_set])
@@ -478,11 +530,12 @@ function worst_removal!(
     num_to_remove::Int64,
     member::Array{Int64,1},
     power::Float64,
+    start_set::Int64,
 )
     deleted_sets = Array{Int}(undef, 0)
     while length(deleted_sets) < num_to_remove
         removal_costs = worst_vertices(tour, dist)
-        ind = pdf_select(removal_costs, power)
+        ind = pdf_select(removal_costs[2:length(removal_costs)], power) + 1
         set_to_delete = member[tour[ind]]
 
         # perform the deletion
@@ -498,12 +551,17 @@ function segment_removal!(
     tour::Array{Int64,1},
     num_to_remove::Int64,
     member::Array{Int64,1},
+    start_set::Int64,
 )
-    i = rand(1:length(tour))
+    i = rand(2:length(tour))
     deleted_sets = Array{Int}(undef, 0)
     while length(deleted_sets) < num_to_remove
-        i > length(tour) && (i = 1)
-        push!(deleted_sets, member[tour[i]])
+        i > length(tour) && (i = 2)
+        set_to_delete = member[tour[i]]
+        if set_to_delete == start_set
+            continue
+        end
+        push!(deleted_sets, set_to_delete)
         splice!(tour, i)
     end
     return deleted_sets
@@ -517,11 +575,12 @@ function distance_removal!(
     num_to_remove::Int64,
     member::Array{Int64,1},
     power::Float64,
+    start_set::Int64,
 )
     deleted_sets = Array{Int}(undef, 0)
     deleted_vertices = Array{Int}(undef, 0)
 
-    seed_index = rand(1:length(tour))
+    seed_index = rand(2:length(tour))
     push!(deleted_sets, member[tour[seed_index]])
     push!(deleted_vertices, tour[seed_index])
     splice!(tour, seed_index)
@@ -530,12 +589,16 @@ function distance_removal!(
         # pick a random vertex from the set of deleted vertices
         seed_vertex = rand(deleted_vertices)
         # find closest vertex to the seed vertex that's still in the tour
-        mindist = zeros(Int64, length(tour))
-        for i in 1:length(tour)
-            mindist[i] = min(dist[seed_vertex, tour[i]], dist[tour[i], seed_vertex])
+        mindist = zeros(Int64, length(tour) - 1)
+        for i in 2:length(tour)
+            mindist[i - 1] = min(dist[seed_vertex, tour[i]], dist[tour[i], seed_vertex])
         end
-        del_index = pdf_select(mindist, power)
-        push!(deleted_sets, member[tour[del_index]])
+        del_index = pdf_select(mindist, power) + 1
+        set_to_delete = member[tour[del_index]]
+        if set_to_delete == start_set
+            continue
+        end
+        push!(deleted_sets, set_to_delete)
         push!(deleted_vertices, tour[del_index])
         splice!(tour, del_index)
     end
@@ -549,12 +612,8 @@ determine the cost of removing each vertex from the tour, given that all others 
 """
 function worst_vertices(tour::Array{Int64,1}, dist::Array{Int64,2})
     removal_cost = zeros(Int64, length(tour))
-    @inbounds for i in 1:length(tour)
-        if i == 1
-            removal_cost[i] =
-                dist[tour[end], tour[i]] + dist[tour[i], tour[i+1]] -
-                dist[tour[end], tour[i+1]]
-        elseif i == length(tour)
+    @inbounds for i in 2:length(tour)
+        if i == length(tour)
             removal_cost[i] =
                 dist[tour[i-1], tour[i]] + dist[tour[i], tour[1]] - dist[tour[i-1], tour[1]]
         else

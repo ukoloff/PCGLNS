@@ -24,10 +24,11 @@ function moveopt!(
     order_constraints::Array{Constraints,1},
     member::Array{Int64,1},
     setdist::Distsv,
+    start_set::Int64,
 )
     improvement_found = true
     number_of_moves = 0
-    start_position = 1
+    start_position = 2
 
     @inbounds while improvement_found && number_of_moves < 10
         improvement_found = false
@@ -39,7 +40,16 @@ function moveopt!(
 
             min_insert_idx, max_insert_idx =
                 calc_bounds(tour, set_ind, order_constraints, member)
-
+            
+            if set_ind != start_set
+                min_insert_idx = max(min_insert_idx, 2)
+                if max_insert_idx < min_insert_idx
+                    max_insert_idx = min_insert_idx
+                end
+            else
+                println("inserting start set!")
+            end
+            
             # find the best place to insert the vertex
             v, pos, cost = insert_cost_lb(
                 tour,
@@ -75,8 +85,9 @@ function moveopt_rand!(
     member::Array{Int64,1},
     iters::Int,
     setdist::Distsv,
+    start_set::Int64,
 )
-    tour_inds = collect(1:length(tour))
+    tour_inds = collect(2:length(tour))
     @inbounds for i in 1:iters # i = rand(1:length(tour), iters)
         i = incremental_shuffle!(tour_inds, i)
         select_vertex = tour[i]
@@ -87,6 +98,16 @@ function moveopt_rand!(
 
         min_insert_idx, max_insert_idx =
             calc_bounds(tour, set_ind, order_constraints, member)
+        
+        if set_ind != start_set
+            min_insert_idx = max(min_insert_idx, 2)
+            if max_insert_idx < min_insert_idx
+                max_insert_idx = min_insert_idx
+            end
+        else
+            println("inserting start set!")
+        end
+
         v, pos, cost = insert_cost_lb(
             tour,
             dist,
@@ -178,13 +199,14 @@ function opt_cycle!(
     param::Dict{Symbol,Any},
     setdist::Distsv,
     use,
+    start_set::Int64,
 )
     current.cost = tour_cost(current.tour, dist)
     prev_cost = current.cost
     for i in 1:5
         # FIXME: reopt_tour
         # if i % 2 == 1
-        #     current.tour = reopt_tour(current.tour, dist, sets, member, param)
+        #     current.tour = reopt_tour(current.tour, dist, sets, member, param, start_set)
         # elseif param[:mode] == "fast" || use == "partial"
         if param[:mode] == "fast" || use == "partial"
             moveopt_rand!(
@@ -195,9 +217,10 @@ function opt_cycle!(
                 member,
                 param[:max_removals],
                 setdist,
+                start_set,
             )
         else
-            moveopt!(current.tour, dist, sets, order_constraints, member, setdist)
+            moveopt!(current.tour, dist, sets, order_constraints, member, setdist, start_set)
         end
         current.cost = tour_cost(current.tour, dist)
         if i > 1 && (current.cost >= prev_cost || use == "partial")

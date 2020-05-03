@@ -53,6 +53,7 @@ function read_file(filename)
     set_data = Int64[]
     num_vertices = -1
     num_sets = -1
+    start_set = -1
 
     # parse
     s = open(filename, "r")
@@ -100,7 +101,7 @@ function read_file(filename)
             if occursin(r"^[\d\se+-\.]+$", line)
                 for x in split(line)
                     flt_cost = parse(Float64, x)
-                    cost = trunc(flt_cost)
+                    cost = round(flt_cost)
                     # tested
                     if data_format == "FULL_MATRIX"
                         dist[vid00, vid01] = cost
@@ -203,6 +204,16 @@ function read_file(filename)
                     set_orderings[set_to_precede_idx, set_idx] = 1
                     # push!(set_orderings[set_idx], set_to_precede_idx)
                 end
+            elseif occursin(r"^\s*START_GROUP_SECTION\s*:?\s*$", uppercase(line))
+                parse_state = "START_GROUP_SECTION"
+            elseif occursin(r"^\s*EOF\s*$", uppercase(line))
+                parse_state = "TSPLIB"
+            end
+
+            # Parse set ordering data.
+        elseif parse_state == "START_GROUP_SECTION"
+            if occursin(r"\d+", uppercase(line))
+                start_set = parse(Int64, line)
             elseif occursin(r"^\s*EOF\s*$", uppercase(line))
                 parse_state = "TSPLIB"
             end
@@ -402,9 +413,13 @@ function read_file(filename)
         error("must have more than 1 set")
     end
 
+    if start_set == -1
+        start_set = 1
+    end
+
     membership = findmember(num_vertices, sets)
 
-    return num_vertices, num_sets, sets, set_orderings, dist, membership
+    return num_vertices, num_sets, sets, set_orderings, dist, membership, start_set
 end
 
 

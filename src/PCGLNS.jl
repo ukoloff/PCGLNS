@@ -32,7 +32,7 @@ some optional arguments.
 function solver(problem_instance; args...)
 
     # Read problem data and solver settings.
-    num_vertices, num_sets, sets, set_orderings, dist, membership =
+    num_vertices, num_sets, sets, set_orderings, dist, membership, start_set =
         read_file(problem_instance)
     param = parameter_settings(num_vertices, num_sets, sets, problem_instance, args)
 
@@ -66,6 +66,7 @@ function solver(problem_instance; args...)
             count[:cold_trial],
             membership,
             param,
+            start_set,
         )
 
         # Print_cold_trial(count, param, best).
@@ -113,6 +114,7 @@ function solver(problem_instance; args...)
                     powers,
                     param,
                     phase,
+                    start_set,
                 )
 
                 # Decide whether or not to accept trial.
@@ -127,6 +129,7 @@ function solver(problem_instance; args...)
                         param,
                         setdist,
                         "full",
+                        start_set,
                     )
                     current = trial
                 end
@@ -145,6 +148,7 @@ function solver(problem_instance; args...)
                         param,
                         setdist,
                         "full",
+                        start_set,
                     )
                     best = current
                 else

@@ -48,12 +48,12 @@ def add_sets_ordering_section(lines, orderings, isSop):
     if not isSop:
         idx = get_line_contains_idx("GTSP_SETS", lines)
         if idx == -1:
-            return text
+            return lines
         sets_num = int(lines[idx].split(" : ")[1])
         
         idx = get_line_contains_idx("GTSP_SET_SECTION", lines)
         if idx == -1:
-            return text
+            return lines
         
         for set_line_idx in range(idx + 1, idx + sets_num + 1):
             set_vals = []
@@ -127,9 +127,13 @@ def add_sets_ordering_section(lines, orderings, isSop):
     
     # print(final_ordering)
     
-    idx = get_line_contains_idx("EOF", lines)
+    pre_str = "START_GROUP_SECTION"
+    if isSop:
+        pre_str = "EOF"
+
+    idx = get_line_contains_idx(pre_str, lines)
     if idx == -1:
-        return text
+        return lines
     
     if isSop:
         dims_idx = get_line_contains_idx("DIMENSION", lines)
@@ -172,7 +176,6 @@ def remove_params(text, isSop):
 
     if not isSop:
         lines = remove_pc_specific_param("NODE_WEIGHT_SECTION", lines)
-        lines = remove_pc_specific_param("START_GROUP_SECTION", lines)
         lines = remove_pc_specific_param("NODE_AGENT_SECTION", lines)
     
     return "\n".join(lines)
