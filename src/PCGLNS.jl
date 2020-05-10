@@ -52,11 +52,14 @@ function solver(problem_instance; args...)
     )
     lowest = Tour(Int64[], typemax(Int64))
     start_time = time_ns()
+    best_fount_time = 0.0::Float64
 
     # Compute set distances which will be helpful.
     setdist = set_vertex_dist(dist, num_sets, membership)
     powers = initialize_powers(param)
 
+    nthreads = Threads.nthreads()
+    threads_trials = Array{Tour,1}(undef, nthreads)
     while count[:cold_trial] <= param[:cold_trials]
 
         # Build tour from scratch on a cold restart.
@@ -106,19 +109,29 @@ function solver(problem_instance; args...)
                 if iter_count > param[:num_iterations] / 2 && phase == :early
                     phase = :mid
                 end
-                trial = remove_insert(
-                    current,
-                    best,
-                    dist,
-                    membership,
-                    setdist,
-                    sets,
-                    order_constraints,
-                    powers,
-                    param,
-                    phase,
-                    start_set,
-                )
+                
+                Threads.@threads for i = 1:nthreads
+                    threads_trials[i] = remove_insert(
+                        current,
+                        best,
+                        dist,
+                        membership,
+                        setdist,
+                        sets,
+                        order_constraints,
+                        powers,
+                        param,
+                        phase,
+                        start_set,
+                    )
+                end
+
+                trial = Tour(Int64[], typemax(Int64))
+                @sync for i = 1:nthreads
+                    if threads_trials[i].cost < trial.cost
+                        trial = threads_trials[i]
+                    end
+                end
 
                 # Decide whether or not to accept trial.
                 if accepttrial_noparam(trial.cost, current.cost, param[:prob_accept]) ||
@@ -154,6 +167,9 @@ function solver(problem_instance; args...)
                         start_set,
                     )
                     best = current
+                    if lowest.cost > best.cost
+                        best_fount_time = (time_ns() - start_time) / EPS
+                    end
                 else
                     count[:latest_improvement] += 1
                 end
@@ -165,7 +181,7 @@ function solver(problem_instance; args...)
                     timer = (time_ns() - start_time) / EPS
                     lowest.cost > best.cost && (lowest = best)
                     print_best(count, param, best, lowest, init_time)
-                    print_summary(lowest, timer, membership, param)
+                    print_summary(lowest, timer, best_fount_time, membership, param)
                     return
                 end
 
@@ -189,6 +205,6 @@ function solver(problem_instance; args...)
     end
 
     timer = (time_ns() - start_time) / EPS
-    print_summary(lowest, timer, membership, param)
+    print_summary(lowest, timer, best_fount_time, membership, param)
 end
 end

@@ -602,6 +602,7 @@ end
 function print_summary(
     lowest::Tour,
     timer::Float64,
+    best_fount_time::Float64,
     member::Array{Int64, 1},
     param::Dict{Symbol, Any},
 )
@@ -613,6 +614,7 @@ function print_summary(
             println("\n\n", "--------- Tour Summary ------------")
             println("Cost              : ", lowest.cost)
             println("Total Time        : ", round(timer, digits = 2), " sec")
+            println("Best Found Time   : ", round(best_fount_time, digits = 2), " sec")
             println("Solver Timeout?   : ", param[:timeout])
             println(
                 "Tour is Feasible? : ",
