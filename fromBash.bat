@@ -1,3 +1,0 @@
-REM export JULIA_NUM_THREADS=`nproc`
-set JULIA_NUM_THREADS=%NUMBER_OF_PROCESSORS%
-julia runPCGLNS.jl ft53.1.pcglns

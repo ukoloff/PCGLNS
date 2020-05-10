@@ -83,5 +83,4 @@ function solve(ARGS)
     PCGLNS.solver(problem_instance; optional_args...)
 end
 
-# @time
 solve(ARGS)

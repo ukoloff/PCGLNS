@@ -48,7 +48,7 @@ function get_relative_ordering(
     # Ascendants.
     path = Set{Int64}()
     push!(path, set_idx)
-    @inbounds while !isempty(path)
+    while !isempty(path)
         x = pop!(path)
         for (idx, ordering) in enumerate(set_orderings[x, :])
             if ordering == 1 && !in(idx, constraints.ascendants)
@@ -62,7 +62,7 @@ function get_relative_ordering(
     # Descendants.
     path = Set{Int64}()
     push!(path, set_idx)
-    @inbounds while !isempty(path)
+    while !isempty(path)
         x = pop!(path)
         for (idx, ordering) in enumerate(set_orderings[x, :])
             if ordering == -1 && !in(idx, constraints.descendants)
@@ -97,7 +97,7 @@ end
     min_insert_idx = 1
     max_insert_idx = length(tour)
     constraints = order_constraints[set_idx]
-    @inbounds for i in 1:length(tour)
+    for i in 1:length(tour)
         if in(member[tour[i]], constraints.ascendants)
             min_insert_idx = i + 1
         elseif in(member[tour[i]], constraints.descendants) &&
@@ -260,7 +260,7 @@ end
 """  Compute the length of a tour  """
 @inline function tour_cost(tour::Array{Int64,1}, dist::Array{Int64,2})
     tour_length = max(dist[tour[end], tour[1]], 0)
-    @inbounds for i in 1:length(tour)-1
+    for i in 1:length(tour)-1
         tour_length += dist[tour[i], tour[i+1]]
     end
     return tour_length
@@ -301,7 +301,7 @@ end
 """ rand_select for randomize over all minimizers """
 @inline function rand_select(a::Array{Int64,1}, val::Int)
     inds = Int[]
-    @inbounds for i in 1:length(a)
+    for i in 1:length(a)
         a[i] == val && (push!(inds, i))
     end
     return rand(inds)

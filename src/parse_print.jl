@@ -622,7 +622,7 @@ function print_summary(
             )
             println("Output File       : ", param[:output_file])
             println("Tour Ordering     : ", order_to_print)
-            println("Set Ordering      : ", [member[i] for i in lowest.tour])
+            # println("Set Ordering      : ", [member[i] for i in lowest.tour])
             println("-----------------------------------")
         end
         if param[:output_file] != "None"
