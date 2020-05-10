@@ -20,13 +20,13 @@
 """ tour type that stores the order array and the length of the tour
 """
 mutable struct Tour
-    tour::Array{Int64,1}
+    tour::Array{Int64, 1}
     cost::Int64
 end
 
 """ return the vertex before tour[i] on tour """
 @inline function prev_tour(tour, i)
-    i != 1 && return tour[i-1]
+    i != 1 && return tour[i - 1]
     return tour[length(tour)]
 end
 
@@ -35,15 +35,12 @@ end
 #########  PCGTSP Utilities ###########################
 
 mutable struct Constraints
-    ascendants::Array{Int64,1}
-    descendants::Array{Int64,1}
+    ascendants::Array{Int64, 1}
+    descendants::Array{Int64, 1}
 end
 
 
-function get_relative_ordering(
-    set_idx::Int64,
-    set_orderings::Array{Int64,2},
-)
+function get_relative_ordering(set_idx::Int64, set_orderings::Array{Int64, 2})
     constraints = Constraints(Int64[], Int64[])
 
     # Ascendants.
@@ -78,9 +75,9 @@ function get_relative_ordering(
 end
 
 
-function calc_order_constraints(sets::Array{Any,1}, set_orderings::Array{Int64,2})
+function calc_order_constraints(sets::Array{Any, 1}, set_orderings::Array{Int64, 2})
     sets_length = length(sets)
-    order_constraints = Array{Constraints,1}(undef, sets_length)
+    order_constraints = Array{Constraints, 1}(undef, sets_length)
     Threads.@threads for set_idx in 1:sets_length
         order_constraints[set_idx] = get_relative_ordering(set_idx, set_orderings)
     end
@@ -90,10 +87,10 @@ end
 
 
 @inline function calc_bounds(
-    tour::Array{Int64,1},
+    tour::Array{Int64, 1},
     set_idx::Int64,
-    order_constraints::Array{Constraints,1},
-    member::Array{Int64,1},
+    order_constraints::Array{Constraints, 1},
+    member::Array{Int64, 1},
 )
     min_insert_idx = 1
     max_insert_idx = length(tour)
@@ -120,20 +117,20 @@ end
 
 """ some insertions break tie by taking first minimizer -- this
 randomization helps avoid getting stuck choosing same minimizer """
-function pivot_tour!(tour::Array{Int64,1})
+function pivot_tour!(tour::Array{Int64, 1})
     pivot = rand(1:length(tour))
-    tour = [tour[pivot:end]; tour[1:pivot-1]]
+    tour = [tour[pivot:end]; tour[1:(pivot - 1)]]
 end
 
 
-function randomize_sets!(sets::Array{Any,1}, sets_to_insert::Array{Int64,1})
+function randomize_sets!(sets::Array{Any, 1}, sets_to_insert::Array{Int64, 1})
     for i in sets_to_insert
         shuffle!(sets[i])
     end
 end
 
 
-function findmember(num_vertices::Int64, sets::Array{Any,1})
+function findmember(num_vertices::Int64, sets::Array{Any, 1})
     """  create an array containing the set number for each vertex """
     member = zeros(Int64, num_vertices)
     num_verts = 0
@@ -153,13 +150,13 @@ end
 
 
 struct Distsv
-    set_vert::Array{Int64,2}
-    vert_set::Array{Int64,2}
-    min_sv::Array{Int64,2}
+    set_vert::Array{Int64, 2}
+    vert_set::Array{Int64, 2}
+    min_sv::Array{Int64, 2}
 end
 
 
-function set_vertex_dist(dist::Array{Int64,2}, num_sets::Int, member::Array{Int64,1})
+function set_vertex_dist(dist::Array{Int64, 2}, num_sets::Int, member::Array{Int64, 1})
     """
  Computes the minimum distance between each set and each vertex
  Also compute the minimum distance from a set to a vertex, ignoring direction
@@ -193,7 +190,7 @@ end
 
 
 
-function set_vertex_distance(dist::Array{Int64,2}, sets::Array{Any,1})
+function set_vertex_distance(dist::Array{Int64, 2}, sets::Array{Any, 1})
     """
  Computes the minimum distance between each set and each vertex
  """
@@ -214,7 +211,7 @@ end
 
 
 """ Find the set with the smallest number of vertices """
-function min_set(sets::Array{Any,1})
+function min_set(sets::Array{Any, 1})
     min_size = length(sets[1])
     min_index = 1
     for i in 2:length(sets)
@@ -259,10 +256,10 @@ end
 ################ Tour checks ######################
 
 """  Compute the length of a tour  """
-@inline function tour_cost(tour::Array{Int64,1}, dist::Array{Int64,2})
+@inline function tour_cost(tour::Array{Int64, 1}, dist::Array{Int64, 2})
     tour_length = max(dist[tour[end], tour[1]], 0)
-    for i in 1:length(tour)-1
-        tour_length += dist[tour[i], tour[i+1]]
+    for i in 1:(length(tour) - 1)
+        tour_length += dist[tour[i], tour[i + 1]]
     end
     return tour_length
 end
@@ -271,7 +268,11 @@ end
 """
 Checks if a tour is feasible in that it visits each set exactly once.
 """
-function tour_feasibility(tour::Array{Int64,1}, membership::Array{Int64,1}, num_sets::Int64)
+function tour_feasibility(
+    tour::Array{Int64, 1},
+    membership::Array{Int64, 1},
+    num_sets::Int64,
+)
     length(tour) != num_sets && return false
 
     set_test = falses(num_sets)
@@ -300,7 +301,7 @@ end
 
 
 """ rand_select for randomize over all minimizers """
-@inline function rand_select(a::Array{Int64,1}, val::Int)
+@inline function rand_select(a::Array{Int64, 1}, val::Int)
     inds = Int[]
     for i in 1:length(a)
         a[i] == val && (push!(inds, i))

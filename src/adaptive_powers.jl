@@ -22,9 +22,9 @@ its weight, and its score on the last segment
 mutable struct Power
     name::String
     value::Float64
-    weight::Dict{Symbol,Float64}
-    scores::Dict{Symbol,Float64}
-    count::Dict{Symbol,Int64}
+    weight::Dict{Symbol, Float64}
+    scores::Dict{Symbol, Float64}
+    count::Dict{Symbol, Int64}
 end
 
 
@@ -145,7 +145,7 @@ end
 """
 sums the weights for all the powers (i.e., the insertion or deletion methods)
 """
-function total_power_weight(powers::Array{Power,1})
+function total_power_weight(powers::Array{Power, 1})
     total_weight = Dict(:early => 0.0, :mid => 0.0, :late => 0.0)
     for phase in keys(total_weight)
         for i in 1:length(powers)
@@ -176,7 +176,7 @@ end
 Update both insertion and deletion powers along with the total weights
 if we are a multiple of param[:adaptive_iter] iterations in trial
 """
-function power_update!(powers, param::Dict{Symbol,Any})
+function power_update!(powers, param::Dict{Symbol, Any})
     for phase in [:early, :mid, :late]
         power_weight_update!(powers["insertions"], param, phase)
         power_weight_update!(powers["removals"], param, phase)
@@ -193,8 +193,8 @@ Update only at the end of each trial -- update based on average success
 over the trial
 """
 function power_weight_update!(
-    powers::Array{Power,1},
-    param::Dict{Symbol,Any},
+    powers::Array{Power, 1},
+    param::Dict{Symbol, Any},
     phase::Symbol,
 )
     for power in powers

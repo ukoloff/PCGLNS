@@ -441,7 +441,7 @@ end
 ######### Output Printing ###########################
 
 """ print the main parameter settings """
-function print_params(param::Dict{Symbol,Any})
+function print_params(param::Dict{Symbol, Any})
     if param[:print_output] > 0
         println("\n", "--------- Problem Data ------------")
         println("Instance Name      : ", param[:problem_instance])
@@ -491,7 +491,7 @@ end
 
 
 """print statement at the beginning of a cold trial"""
-function print_cold_trial(count::Dict{Symbol,Real}, param::Dict{Symbol,Any}, best::Tour)
+function print_cold_trial(count::Dict{Symbol, Real}, param::Dict{Symbol, Any}, best::Tour)
     if param[:print_output] == 2
         println(
             "\n||--- trial ",
@@ -506,8 +506,8 @@ end
 
 """print details at the end of each warm trial"""
 function print_warm_trial(
-    count::Dict{Symbol,Real},
-    param::Dict{Symbol,Any},
+    count::Dict{Symbol, Real},
+    param::Dict{Symbol, Any},
     best::Tour,
     iter_count::Int,
 )
@@ -529,8 +529,8 @@ end
 
 """ print best cost so far """
 function print_best(
-    count::Dict{Symbol,Real},
-    param::Dict{Symbol,Any},
+    count::Dict{Symbol, Real},
+    param::Dict{Symbol, Any},
     best::Tour,
     lowest::Tour,
     init_time::Float64,
@@ -602,8 +602,8 @@ end
 function print_summary(
     lowest::Tour,
     timer::Float64,
-    member::Array{Int64,1},
-    param::Dict{Symbol,Any},
+    member::Array{Int64, 1},
+    param::Dict{Symbol, Any},
 )
     if param[:print_output] == 3 && !param[:timeout] && !param[:budget_met]
         progress_bar(param[:cold_trials], 1.0, lowest.cost, round(timer, digits = 1))
