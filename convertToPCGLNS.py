@@ -31,13 +31,14 @@ def convert_wight_section(text, isSop):
         strip_str = lines[i].strip()
         strip_str = re.sub('\s+', ' ', strip_str)
         float_lst = list(map(float, strip_str.split(' ')))
+        int_lst = [round(x) for x in float_lst]
         tmplst = []
-        for vert_idx, fl in enumerate(float_lst):
+        for vert_idx, fl in enumerate(int_lst):
             if fl == -1:
                 tmplst.append(vert_idx + 1)
         
         orderings.append(tmplst)
-        lines[i] = strip_str
+        lines[i] = ' '.join(str(x) for x in int_lst)
     
     return "\n".join(lines), orderings
 
@@ -125,11 +126,7 @@ def add_sets_ordering_section(lines, orderings, isSop):
             if new_lst not in final_ordering:
                 final_ordering.append(new_lst)
     
-    # print(final_ordering)
-    
     pre_str = "START_GROUP_SECTION"
-    if isSop:
-        pre_str = "EOF"
 
     idx = get_line_contains_idx(pre_str, lines)
     if idx == -1:
@@ -205,6 +202,14 @@ def set_params(text, isSop):
     paramName = lines[idx].split(" : ")[0]
     fullName = lines[idx].split(" : ")[1]
     lines[idx] = paramName + " : " + fullName.split(".")[0] + ".pcglns"
+
+    if isSop:
+        eof_idx = get_line_contains_idx("EOF", lines)
+        if eof_idx == -1:
+            return "\n".join(lines)
+        
+        lines.insert(eof_idx, "START_GROUP_SECTION")
+        lines.insert(eof_idx + 1, "1")
 
     lines = add_sets_ordering_section(lines, orderings, isSop)
 

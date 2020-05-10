@@ -204,11 +204,9 @@ function opt_cycle!(
     current.cost = tour_cost(current.tour, dist)
     prev_cost = current.cost
     for i in 1:5
-        # FIXME: reopt_tour
-        # if i % 2 == 1
-        #     current.tour = reopt_tour(current.tour, dist, sets, member, param, start_set)
-        # elseif param[:mode] == "fast" || use == "partial"
-        if param[:mode] == "fast" || use == "partial"
+        if i % 2 == 1
+            current.tour = reopt_tour(current.tour, dist, sets, member, param, start_set)
+        elseif param[:mode] == "fast" || use == "partial"
             moveopt_rand!(
                 current.tour,
                 dist,
@@ -241,17 +239,17 @@ function reopt_tour(
     sets::Array{Any,1},
     member::Array{Int64,1},
     param::Dict{Symbol,Any},
+    start_set::Int64,
 )
     best_tour_cost = tour_cost(tour, dist)
     new_tour = copy(tour)
-    min_index = min_setv(tour, sets, member, param)
-    tour = [tour[min_index:end]; tour[1:min_index-1]]
-
-    prev = zeros(Int64, param[:num_vertices])   # initialize cost_to_come
+    prev = zeros(Int64, param[:num_vertices])
     cost_to_come = zeros(Int64, param[:num_vertices])
     @inbounds for start_vertex in sets[member[tour[1]]]
         relax_in!(cost_to_come, dist, prev, Int64[start_vertex], sets[member[tour[2]]])
-        for i in 3:length(tour)  # cost to get to ith set on path through (i-1)th set
+        
+        # cost to get to ith set on path through (i-1)th set
+        @inbounds for i in 3:length(tour)  
             relax_in!(
                 cost_to_come,
                 dist,
@@ -260,6 +258,7 @@ function reopt_tour(
                 sets[member[tour[i]]],
             )
         end
+
         # find the cost back to the start vertex.
         tour_cost, start_prev =
             relax(cost_to_come, dist, sets[member[tour[end]]], start_vertex)
@@ -268,6 +267,7 @@ function reopt_tour(
             new_tour = extract_tour(prev, start_vertex, start_prev)
         end
     end
+
     return new_tour
 end
 
@@ -291,12 +291,14 @@ end
 extracting a tour from the prev pointers.
 """
 function extract_tour(prev::Array{Int64,1}, start_vertex::Int64, start_prev::Int64)
-    tour = [start_vertex]
+    tour = []
     vertex_step = start_prev
-    while prev[vertex_step] != 0
+    @inbounds while prev[vertex_step] != 0
         push!(tour, vertex_step)
         vertex_step = prev[vertex_step]
     end
+    push!(tour, start_vertex)
+    
     return reverse(tour)
 end
 

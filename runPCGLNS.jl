@@ -77,7 +77,11 @@ function parse_cmd(ARGS)
     return filename, optional_args
 end
 
+# Running the code on the problem instance passed in via command line args.
+function solve(ARGS)
+    problem_instance, optional_args = parse_cmd(ARGS)
+    PCGLNS.solver(problem_instance; optional_args...)
+end
 
-# running the code on the problem instance passed in via command line args.
-problem_instance, optional_args = parse_cmd(ARGS)
-PCGLNS.solver(problem_instance; optional_args...)
+# @time
+solve(ARGS)

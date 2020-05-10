@@ -42,53 +42,53 @@ end
 function get_relative_ordering(
     set_idx::Int64,
     set_orderings::Array{Int64,2},
-    constraints::Constraints,
 )
-    # FIXME: Inline funcs.
+    constraints = Constraints(Int64[], Int64[])
+
     # Ascendants.
     path = Set{Int64}()
     push!(path, set_idx)
-    while !isempty(path)
+    @inbounds while !isempty(path)
         x = pop!(path)
         for (idx, ordering) in enumerate(set_orderings[x, :])
-            if ordering == 1
+            if ordering == 1 && !in(idx, constraints.ascendants)
                 push!(path, idx)
                 push!(constraints.ascendants, idx)
             end
         end
     end
-    constraints.ascendants = unique(constraints.ascendants)
+    # unique!(constraints.ascendants)
 
     # Descendants.
     path = Set{Int64}()
     push!(path, set_idx)
-    while !isempty(path)
+    @inbounds while !isempty(path)
         x = pop!(path)
         for (idx, ordering) in enumerate(set_orderings[x, :])
-            if set_orderings[x, idx] == -1
+            if ordering == -1 && !in(idx, constraints.descendants)
                 push!(path, idx)
                 push!(constraints.descendants, idx)
             end
         end
     end
-    constraints.descendants = unique(constraints.descendants)
+    # unique!(constraints.descendants)
+
+    return constraints
 end
 
 
 function calc_order_constraints(sets::Array{Any,1}, set_orderings::Array{Int64,2})
     sets_length = length(sets)
     order_constraints = Array{Constraints,1}(undef, sets_length)
-    for set_idx in 1:sets_length
-        new_constraints = Constraints(Int64[], Int64[])
-        get_relative_ordering(set_idx, set_orderings, new_constraints)
-        order_constraints[set_idx] = new_constraints
+    Threads.@threads for set_idx in 1:sets_length
+        order_constraints[set_idx] = get_relative_ordering(set_idx, set_orderings)
     end
 
     return order_constraints
 end
 
 
-function calc_bounds(
+@inline function calc_bounds(
     tour::Array{Int64,1},
     set_idx::Int64,
     order_constraints::Array{Constraints,1},
@@ -96,12 +96,13 @@ function calc_bounds(
 )
     min_insert_idx = 1
     max_insert_idx = length(tour)
-    for (index, vert) in enumerate(tour)
-        if in(member[vert], order_constraints[set_idx].ascendants)
-            min_insert_idx = index + 1
-        elseif in(member[vert], order_constraints[set_idx].descendants) &&
+    constraints = order_constraints[set_idx]
+    @inbounds for i in 1:length(tour)
+        if in(member[tour[i]], constraints.ascendants)
+            min_insert_idx = i + 1
+        elseif in(member[tour[i]], constraints.descendants) &&
                max_insert_idx == length(tour)
-            max_insert_idx = index
+            max_insert_idx = i
         end
     end
 

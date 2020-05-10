@@ -100,8 +100,7 @@ function read_file(filename)
         elseif parse_state == "TSPLIB_MATRIX_DATA"
             if occursin(r"^[\d\se+-\.]+$", line)
                 for x in split(line)
-                    flt_cost = parse(Float64, x)
-                    cost = round(flt_cost)
+                    cost = parse(Int64, x)
                     # tested
                     if data_format == "FULL_MATRIX"
                         dist[vid00, vid01] = cost
