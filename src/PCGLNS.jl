@@ -58,7 +58,7 @@ function solver(problem_instance; args...)
     setdist = set_vertex_dist(dist, num_sets, membership)
     powers = initialize_powers(param)
 
-    nthreads = max(1, min(Threads.nthreads(), param[:num_threads]))
+    nthreads = max(1, Threads.nthreads())
     threads_trials = Array{Tour, 1}(undef, nthreads)
     while count[:cold_trial] <= param[:cold_trials]
 

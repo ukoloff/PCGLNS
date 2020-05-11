@@ -121,7 +121,6 @@ function parameter_settings(num_vertices, num_sets, sets, problem_instance, args
     param[:budget_met] = false
     param[:min_set] = min_set(sets)
     param[:min_removals] = (param[:max_removals] > 1 ? 2 : 1)
-    param[:num_threads] = get(args, :num_threads, 1)
     print_params(param)
 
     return param
