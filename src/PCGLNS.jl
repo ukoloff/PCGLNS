@@ -58,8 +58,8 @@ function solver(problem_instance; args...)
     setdist = set_vertex_dist(dist, num_sets, membership)
     powers = initialize_powers(param)
 
-    nthreads = Threads.nthreads()
-    threads_trials = Array{Tour,1}(undef, nthreads)
+    nthreads = max(1, min(Threads.nthreads(), param[:num_threads]))
+    threads_trials = Array{Tour, 1}(undef, nthreads)
     while count[:cold_trial] <= param[:cold_trials]
 
         # Build tour from scratch on a cold restart.
@@ -109,8 +109,8 @@ function solver(problem_instance; args...)
                 if iter_count > param[:num_iterations] / 2 && phase == :early
                     phase = :mid
                 end
-                
-                Threads.@threads for i = 1:nthreads
+
+                Threads.@threads for i in 1:nthreads
                     threads_trials[i] = remove_insert(
                         current,
                         best,
@@ -127,7 +127,7 @@ function solver(problem_instance; args...)
                 end
 
                 trial = Tour(Int64[], typemax(Int64))
-                @sync for i = 1:nthreads
+                @sync for i in 1:nthreads
                     if threads_trials[i].cost < trial.cost
                         trial = threads_trials[i]
                     end

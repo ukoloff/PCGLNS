@@ -35,10 +35,11 @@ function parse_cmd(ARGS)
         println("-epsilon=[Float in [0,1]]        (default is 0.5)")
         println("-reopt=[Float in [0,1]]          (default is 1.0)")
         println("-budget=[Int]                    (default has no budget)")
+        println("-num_threads=[Int]          (default is 1. Need to set JULIA_NUM_THREADS in your system environment!)")
         exit(0)
     end
     int_flags =
-        ["-max_time", "-trials", "-restarts", "-verbose", "-budget", "-num_iterations"]
+        ["-max_time", "-trials", "-restarts", "-verbose", "-budget", "-num_iterations", "-num_threads"]
     float_flags = ["-epsilon", "-reopt"]
     string_flags = ["-mode", "-output", "-noise", "-devel"]
     filename = ""
