@@ -457,6 +457,7 @@ function print_params(param::Dict{Symbol, Any})
         println("Rate of Adaptation : ", param[:epsilon])
         println("Prob of Reopt      : ", param[:prob_reopt])
         println("Maximum Time       : ", param[:max_time])
+        println("Threads            : ", Threads.nthreads())
         println(
             "Tour Budget        : ",
             (param[:budget] == typemin(Int64) ? "None" : param[:budget]),
