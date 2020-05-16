@@ -38,7 +38,7 @@ function parse_cmd(ARGS)
         exit(0)
     end
     int_flags =
-        ["-max_time", "-trials", "-restarts", "-verbose", "-budget", "-num_iterations"]
+        ["-max_time", "-trials", "-restarts", "-verbose", "-budget", "-num_iterations", "-seed"]
     float_flags = ["-epsilon", "-reopt"]
     string_flags = ["-mode", "-output", "-noise", "-devel"]
     filename = ""

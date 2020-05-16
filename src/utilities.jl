@@ -117,15 +117,19 @@ end
 
 """ some insertions break tie by taking first minimizer -- this
 randomization helps avoid getting stuck choosing same minimizer """
-function pivot_tour!(tour::Array{Int64, 1})
-    pivot = rand(1:length(tour))
+function pivot_tour!(RNGs::Array{MersenneTwister, 1}, tour::Array{Int64, 1})
+    pivot = rand(RNGs[Threads.threadid()], 1:length(tour))
     tour = [tour[pivot:end]; tour[1:(pivot - 1)]]
 end
 
 
-function randomize_sets!(sets::Array{Any, 1}, sets_to_insert::Array{Int64, 1})
+function randomize_sets!(
+    RNGs::Array{MersenneTwister, 1},
+    sets::Array{Any, 1},
+    sets_to_insert::Array{Int64, 1},
+)
     for i in sets_to_insert
-        shuffle!(sets[i])
+        shuffle!(RNGs[Threads.threadid()], sets[i])
     end
 end
 
@@ -231,24 +235,34 @@ end
 """
 decide whether or not to accept a trial based on simulated annealing criteria
 """
-function accepttrial(trial_cost::Int64, current_cost::Int64, temperature::Float64)
+function accepttrial(
+    RNGs::Array{MersenneTwister, 1},
+    trial_cost::Int64,
+    current_cost::Int64,
+    temperature::Float64,
+)
     if trial_cost <= current_cost
         accept_prob = 2.0
     else
         accept_prob = exp((current_cost - trial_cost) / temperature)
     end
-    return (rand() < accept_prob ? true : false)
+    return (rand(RNGs[Threads.threadid()]) < accept_prob ? true : false)
 end
 
 
 """
 decide whether or not to accept a trial based on simple probability
 """
-function accepttrial_noparam(trial_cost::Int64, current_cost::Int64, prob_accept::Float64)
+function accepttrial_noparam(
+    RNGs::Array{MersenneTwister, 1},
+    trial_cost::Int64,
+    current_cost::Int64,
+    prob_accept::Float64,
+)
     if trial_cost <= current_cost
         return true
     end
-    return (rand() < prob_accept ? true : false)
+    return (rand(RNGs[Threads.threadid()]) < prob_accept ? true : false)
 end
 
 
@@ -293,18 +307,22 @@ end
 #####################################################
 #############  Incremental Shuffle ##################
 
-@inline function incremental_shuffle!(a::AbstractVector, i::Int)
-    j = i + floor(Int, rand() * (length(a) + 1 - i))
+@inline function incremental_shuffle!(
+    RNGs::Array{MersenneTwister, 1},
+    a::AbstractVector,
+    i::Int,
+)
+    j = i + floor(Int, rand(RNGs[Threads.threadid()]) * (length(a) + 1 - i))
     a[j], a[i] = a[i], a[j]
     return a[i]
 end
 
 
 """ rand_select for randomize over all minimizers """
-@inline function rand_select(a::Array{Int64, 1}, val::Int)
+@inline function rand_select(RNGs::Array{MersenneTwister, 1}, a::Array{Int64, 1}, val::Int)
     inds = Int[]
     for i in 1:length(a)
         a[i] == val && (push!(inds, i))
     end
-    return rand(inds)
+    return rand(RNGs[Threads.threadid()], inds)
 end

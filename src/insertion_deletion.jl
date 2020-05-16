@@ -14,11 +14,21 @@
 # limitations under the License.
 
 
+mutable struct TrialResult
+    tour::Tour
+    insertion::Power
+    removal::Power
+    noise::Power
+    score::Float64
+end
+
+
 """
 Select a removal and an insertion method using powers, and then perform
 removal followed by insertion on tour.  Operation done in place.
 """
 function remove_insert(
+    RNGs::Array{MersenneTwister, 1},
     current::Tour,
     best::Tour,
     dist::Array{Int64, 2},
@@ -33,12 +43,13 @@ function remove_insert(
 )
     # make a new tour to perform the insertion and deletion on
     trial = Tour(copy(current.tour), current.cost)
-    pivot_tour!(trial.tour)
-    num_removals = rand(param[:min_removals]:param[:max_removals])
+    pivot_tour!(RNGs, trial.tour)
+    num_removals = rand(RNGs[Threads.threadid()], param[:min_removals]:param[:max_removals])
 
-    removal = power_select(powers["removals"], powers["removal_total"], phase)
+    removal = power_select(RNGs, powers["removals"], powers["removal_total"], phase)
     if removal.name == "distance"
         sets_to_insert = distance_removal!(
+            RNGs,
             trial.tour,
             dist,
             num_removals,
@@ -47,16 +58,23 @@ function remove_insert(
             start_set,
         )
     elseif removal.name == "worst"
-        sets_to_insert =
-            worst_removal!(trial.tour, dist, num_removals, member, removal.value, start_set)
+        sets_to_insert = worst_removal!(
+            RNGs,
+            trial.tour,
+            dist,
+            num_removals,
+            member,
+            removal.value,
+            start_set,
+        )
     else
-        sets_to_insert = segment_removal!(trial.tour, num_removals, member, start_set)
+        sets_to_insert = segment_removal!(RNGs, trial.tour, num_removals, member, start_set)
     end
 
-    randomize_sets!(sets, sets_to_insert)
+    randomize_sets!(RNGs, sets, sets_to_insert)
     # then perform insertion
-    insertion = power_select(powers["insertions"], powers["insertion_total"], phase)
-    noise = power_select(powers["noise"], powers["noise_total"], phase)
+    insertion = power_select(RNGs, powers["insertions"], powers["insertion_total"], phase)
+    noise = power_select(RNGs, powers["noise"], powers["noise_total"], phase)
 
     if insertion.name == "cheapest"
         cheapest_insertion!(
@@ -71,6 +89,7 @@ function remove_insert(
         )
     else
         randpdf_insertion!(
+            RNGs,
             trial.tour,
             sets_to_insert,
             dist,
@@ -83,7 +102,8 @@ function remove_insert(
             start_set,
         )
     end
-    rand() < param[:prob_reopt] && opt_cycle!(
+    rand(RNGs[Threads.threadid()]) < param[:prob_reopt] && opt_cycle!(
+        RNGs,
         trial,
         dist,
         sets,
@@ -95,15 +115,9 @@ function remove_insert(
         start_set,
     )
 
-    # update power scores for remove and insert
     score = 100 * max(current.cost - trial.cost, 0) / current.cost
-    insertion.scores[phase] += score
-    insertion.count[phase] += 1
-    removal.scores[phase] += score
-    removal.count[phase] += 1
-    noise.scores[phase] += score
-    noise.count[phase] += 1
-    return trial
+
+    return trial, insertion, removal, noise, score
 end
 
 
@@ -113,10 +127,10 @@ and exponential distribution with lambda = power
 # goes from left of array if power is positive
 # and right of array if it is negative
 """
-function select_k(num::Int64, power::Float64)
+function select_k(RNGs::Array{MersenneTwister, 1}, num::Int64, power::Float64)
     base = (1 / 2)^abs(power)
     # (1 - base^num)/(1 - base) is sum of geometric series
-    rand_select = (1 - base^num) / (1 - base) * rand()
+    rand_select = (1 - base^num) / (1 - base) * rand(RNGs[Threads.threadid()])
     bin = 1
     for k in 1:num
         if rand_select < bin
@@ -133,18 +147,22 @@ end
 selecting a random k in 1 to length(weights) according to power
 and then selecting the kth smallest element in weights
 """
-function pdf_select(weights::Array{Int64, 1}, power::Float64)
-    power == 0.0 && return rand(1:length(weights))
-    power > 9.0 && return rand_select(weights, maximum(weights))
-    power < -9.0 && return rand_select(weights, minimum(weights))
+function pdf_select(
+    RNGs::Array{MersenneTwister, 1},
+    weights::Array{Int64, 1},
+    power::Float64,
+)
+    power == 0.0 && return rand(RNGs[Threads.threadid()], 1:length(weights))
+    power > 9.0 && return rand_select(RNGs, weights, maximum(weights))
+    power < -9.0 && return rand_select(RNGs, weights, minimum(weights))
 
     # select kth smallest.  If 1 or length(weights), simply return
-    k = select_k(length(weights), power)
-    k == 1 && return rand_select(weights, minimum(weights))
-    k == length(weights) && return rand_select(weights, maximum(weights))
+    k = select_k(RNGs, length(weights), power)
+    k == 1 && return rand_select(RNGs, weights, minimum(weights))
+    k == length(weights) && return rand_select(RNGs, weights, maximum(weights))
     val = partialsort(weights, k)
 
-    return rand_select(weights, val)
+    return rand_select(RNGs, weights, val)
 end
 
 
@@ -152,6 +170,7 @@ end
 choose set with pdf_select, and then insert in best place with noise
 """
 function randpdf_insertion!(
+    RNGs::Array{MersenneTwister, 1},
     tour::Array{Int64, 1},
     sets_to_insert::Array{Int64, 1},
     dist::Array{Int64, 2},
@@ -183,7 +202,7 @@ function randpdf_insertion!(
                 end
             end
         end
-        set_index = pdf_select(mindist, power) # select set to insert from pdf
+        set_index = pdf_select(RNGs, mindist, power) # select set to insert from pdf
         # find the closest vertex and the best insertion in that vertex
         nearest_set = sets_to_insert[set_index]
 
@@ -199,6 +218,7 @@ function randpdf_insertion!(
 
         if noise.name == "subset"
             bestv, bestpos = insert_subset_lb(
+                RNGs,
                 tour,
                 dist,
                 sets[nearest_set],
@@ -208,6 +228,7 @@ function randpdf_insertion!(
             )
         else
             bestv, bestpos = insert_lb(
+                RNGs,
                 tour,
                 dist,
                 sets[nearest_set],
@@ -295,6 +316,7 @@ insertion cost, along with the position of this insertion in the tour.  If
 best_position is i, then vertex should be inserted between tour[i-1] and tour[i].
 """
 @inline function insert_lb(
+    RNGs::Array{MersenneTwister, 1},
     tour::Array{Int64, 1},
     dist::Array{Int64, 2},
     set::Array{Int64, 1},
@@ -312,7 +334,10 @@ best_position is i, then vertex should be inserted between tour[i-1] and tour[i]
         v1 = tour[length(tour)]
         for v in set
             insert_cost = dist[v1, v]
-            noise > 0.0 && (insert_cost += round(Int64, noise * rand() * abs(insert_cost)))
+            noise > 0.0 && (
+                insert_cost +=
+                    round(Int64, noise * rand(RNGs[Threads.threadid()]) * abs(insert_cost))
+            )
             if insert_cost < best_cost
                 best_cost = insert_cost
                 bestv = v
@@ -331,7 +356,10 @@ best_position is i, then vertex should be inserted between tour[i-1] and tour[i]
 
         for v in set
             insert_cost = dist[v1, v] + dist[v, tour[i]] - dist[v1, tour[i]]
-            noise > 0.0 && (insert_cost += round(Int64, noise * rand() * abs(insert_cost)))
+            noise > 0.0 && (
+                insert_cost +=
+                    round(Int64, noise * rand(RNGs[Threads.threadid()]) * abs(insert_cost))
+            )
             if insert_cost < best_cost
                 best_cost = insert_cost
                 bestv = v
@@ -344,6 +372,7 @@ end
 
 
 @inline function insert_subset_lb(
+    RNGs::Array{MersenneTwister, 1},
     tour::Array{Int64, 1},
     dist::Array{Int64, 2},
     set::Array{Int64, 1},
@@ -357,7 +386,7 @@ end
     tour_inds = collect(1:length(tour))
 
     for i in 1:ceil(Int64, length(tour) * noise)
-        i = incremental_shuffle!(tour_inds, i)
+        i = incremental_shuffle!(RNGs, tour_inds, i)
         v1 = prev_tour(tour, i)
         lb =
             setdist.vert_set[v1, setind] + setdist.set_vert[setind, tour[i]] -
@@ -381,6 +410,7 @@ end
 
 """build tour from scratch on a cold restart"""
 function initial_tour!(
+    RNGs::Array{MersenneTwister, 1},
     lowest::Tour,
     dist::Array{Int64, 2},
     sets::Array{Any, 1},
@@ -396,8 +426,11 @@ function initial_tour!(
 
     # compute random initial tour only if past first trial
     # in this case, randomly choose between random and insertion tour.
-    if param[:init_tour] == "rand" && (trial_num > 1) && (rand() < 0.5)
+    if param[:init_tour] == "rand" &&
+       (trial_num > 1) &&
+       (rand(RNGs[Threads.threadid()]) < 0.5)
         random_initial_tour!(
+            RNGs,
             best.tour,
             sets_to_insert,
             dist,
@@ -408,6 +441,7 @@ function initial_tour!(
         )
     else
         random_insertion!(
+            RNGs,
             best.tour,
             sets_to_insert,
             dist,
@@ -429,6 +463,7 @@ Randomly shuffle the sets, and then insert the best vertex from each set back in
 the tour where sets are considered in shuffled order.
 """
 function random_insertion!(
+    RNGs::Array{MersenneTwister, 1},
     tour::Array{Int64, 1},
     sets_to_insert::Array{Int64, 1},
     dist::Array{Int64, 2},
@@ -439,7 +474,7 @@ function random_insertion!(
     start_set::Int64,
 )
     # Randomly permute the sets.
-    shuffle!(sets_to_insert)
+    shuffle!(RNGs[Threads.threadid()], sets_to_insert)
     pushed_cnt = 0
     to_insert = copy(sets_to_insert)
     while !isempty(to_insert)
@@ -449,7 +484,7 @@ function random_insertion!(
             rnd_set_idx = findfirst(x -> x == start_set, to_insert)
             rnd_set = to_insert[rnd_set_idx]
         else
-            rnd_set_idx = rand(1:length(to_insert))
+            rnd_set_idx = rand(RNGs[Threads.threadid()], 1:length(to_insert))
             rnd_set = to_insert[rnd_set_idx]
         end
 
@@ -465,13 +500,14 @@ function random_insertion!(
 
         # Only have to compute the insert cost for the changed portion of the tour.
         if min_insert_idx > length(tour)
-            best_vertex = rand(sets[rnd_set])
+            best_vertex = rand(RNGs[Threads.threadid()], sets[rnd_set])
             best_position = length(tour) + 1
         elseif isempty(tour)
-            best_vertex = rand(sets[rnd_set])
+            best_vertex = rand(RNGs[Threads.threadid()], sets[rnd_set])
             best_position = 1
         else
             best_vertex, best_position = insert_lb(
+                RNGs,
                 tour,
                 dist,
                 sets[rnd_set],
@@ -495,6 +531,7 @@ Randomly shuffle the sets, and then insert the best vertex from each set back in
 the tour where sets are considered in shuffled order.
 """
 function random_initial_tour!(
+    RNGs::Array{MersenneTwister, 1},
     tour::Array{Int64, 1},
     sets_to_insert::Array{Int64, 1},
     dist::Array{Int64, 2},
@@ -503,7 +540,7 @@ function random_initial_tour!(
     member::Array{Int64, 1},
     start_set::Int64,
 )
-    shuffle!(sets_to_insert)
+    shuffle!(RNGs[Threads.threadid()], sets_to_insert)
     pushed_cnt = 0
     to_insert = copy(sets_to_insert)
     while !isempty(to_insert)
@@ -513,7 +550,7 @@ function random_initial_tour!(
             rnd_set_idx = findfirst(x -> x == start_set, to_insert)
             rnd_set = to_insert[rnd_set_idx]
         else
-            rnd_set_idx = rand(1:length(to_insert))
+            rnd_set_idx = rand(RNGs[Threads.threadid()], 1:length(to_insert))
             rnd_set = to_insert[rnd_set_idx]
         end
 
@@ -527,8 +564,8 @@ function random_initial_tour!(
             end
         end
 
-        idx_to_insert = rand(min_insert_idx:max_insert_idx)
-        vert_to_insert = rand(sets[rnd_set])
+        idx_to_insert = rand(RNGs[Threads.threadid()], min_insert_idx:max_insert_idx)
+        vert_to_insert = rand(RNGs[Threads.threadid()], sets[rnd_set])
         insert!(tour, idx_to_insert, vert_to_insert)
         deleteat!(to_insert, rnd_set_idx)
     end
@@ -541,6 +578,7 @@ Remove the vertices randomly, but biased towards those that add the most length 
 tour.  Bias is based on the power input.  Vertices are then selected via pdf select.
 """
 function worst_removal!(
+    RNGs::Array{MersenneTwister, 1},
     tour::Array{Int64, 1},
     dist::Array{Int64, 2},
     num_to_remove::Int64,
@@ -551,7 +589,7 @@ function worst_removal!(
     deleted_sets = Array{Int}(undef, 0)
     while length(deleted_sets) < num_to_remove
         removal_costs = worst_vertices(tour, dist)
-        ind = pdf_select(removal_costs[2:length(removal_costs)], power) + 1
+        ind = pdf_select(RNGs, removal_costs[2:length(removal_costs)], power) + 1
         set_to_delete = member[tour[ind]]
 
         # perform the deletion
@@ -564,12 +602,13 @@ end
 
 """ removing a single continuos segment of the tour of size num_remove """
 function segment_removal!(
+    RNGs::Array{MersenneTwister, 1},
     tour::Array{Int64, 1},
     num_to_remove::Int64,
     member::Array{Int64, 1},
     start_set::Int64,
 )
-    i = rand(2:length(tour))
+    i = rand(RNGs[Threads.threadid()], 2:length(tour))
     deleted_sets = Array{Int}(undef, 0)
     while length(deleted_sets) < num_to_remove
         i > length(tour) && (i = 2)
@@ -586,6 +625,7 @@ end
 
 """  pick a random vertex, and delete its closest neighbors  """
 function distance_removal!(
+    RNGs::Array{MersenneTwister, 1},
     tour::Array{Int64, 1},
     dist::Array{Int64, 2},
     num_to_remove::Int64,
@@ -596,20 +636,20 @@ function distance_removal!(
     deleted_sets = Array{Int}(undef, 0)
     deleted_vertices = Array{Int}(undef, 0)
 
-    seed_index = rand(2:length(tour))
+    seed_index = rand(RNGs[Threads.threadid()], 2:length(tour))
     push!(deleted_sets, member[tour[seed_index]])
     push!(deleted_vertices, tour[seed_index])
     splice!(tour, seed_index)
 
     while length(deleted_sets) < num_to_remove
         # pick a random vertex from the set of deleted vertices
-        seed_vertex = rand(deleted_vertices)
+        seed_vertex = rand(RNGs[Threads.threadid()], deleted_vertices)
         # find closest vertex to the seed vertex that's still in the tour
         mindist = zeros(Int64, length(tour) - 1)
         for i in 2:length(tour)
             mindist[i - 1] = min(dist[seed_vertex, tour[i]], dist[tour[i], seed_vertex])
         end
-        del_index = pdf_select(mindist, power) + 1
+        del_index = pdf_select(RNGs, mindist, power) + 1
         set_to_delete = member[tour[del_index]]
         if set_to_delete == start_set
             continue

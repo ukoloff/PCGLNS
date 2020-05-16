@@ -458,6 +458,7 @@ function print_params(param::Dict{Symbol, Any})
         println("Prob of Reopt      : ", param[:prob_reopt])
         println("Maximum Time       : ", param[:max_time])
         println("Threads            : ", Threads.nthreads())
+        println("Seed               : ", param[:seed] == -1 ? "none" : param[:seed])
         println(
             "Tour Budget        : ",
             (param[:budget] == typemin(Int64) ? "None" : param[:budget]),
@@ -621,11 +622,11 @@ function print_summary(
                 "Tour is Feasible? : ",
                 tour_feasibility(lowest.tour, member, param[:num_sets]),
             )
+            println("Output File       : ", param[:output_file])
             order_to_print = (
                 param[:output_file] == "None" ? lowest.tour :
                     "printed to " * param[:output_file]
             )
-            println("Output File       : ", param[:output_file])
             println("Tour Ordering     : ", order_to_print)
             # println("Set Ordering      : ", [member[i] for i in lowest.tour])
             println("-----------------------------------")

@@ -57,13 +57,28 @@ function solver(problem_instance; args...)
     # Compute set distances which will be helpful.
     setdist = set_vertex_dist(dist, num_sets, membership)
     powers = initialize_powers(param)
+    dummy_power = Power("", 0.0, Dict(), Dict(), Dict())
 
     nthreads = max(1, Threads.nthreads())
-    threads_trials = Array{Tour, 1}(undef, nthreads)
+    threads_trials = Array{TrialResult, 1}(undef, nthreads)
+
+    RNGs = Array{Random.MersenneTwister, 1}(undef, nthreads)
+    resize!(RNGs, nthreads)
+    @sync if param[:seed] != -1
+        Threads.@threads for i in 1:nthreads
+            RNGs[Threads.threadid()] = Random.MersenneTwister(param[:seed] + i)
+        end
+    else
+        Threads.@threads for i in 1:nthreads
+            RNGs[Threads.threadid()] = Random.MersenneTwister()
+        end
+    end
+
     while count[:cold_trial] <= param[:cold_trials]
 
         # Build tour from scratch on a cold restart.
         best = initial_tour!(
+            RNGs,
             lowest,
             dist,
             sets,
@@ -110,8 +125,16 @@ function solver(problem_instance; args...)
                     phase = :mid
                 end
 
-                Threads.@threads for i in 1:nthreads
-                    threads_trials[i] = remove_insert(
+                trial_result = TrialResult(
+                    Tour(Int64[], typemax(Int64)),
+                    dummy_power,
+                    dummy_power,
+                    dummy_power,
+                    0.0,
+                )
+                @sync Threads.@threads for i in 1:nthreads
+                    thread_trial, insertion, removal, noise, score = remove_insert(
+                        RNGs,
                         current,
                         best,
                         dist,
@@ -124,19 +147,33 @@ function solver(problem_instance; args...)
                         phase,
                         start_set,
                     )
+                    threads_trials[Threads.threadid()] =
+                        TrialResult(thread_trial, insertion, removal, noise, score)
                 end
 
-                trial = Tour(Int64[], typemax(Int64))
-                @sync for i in 1:nthreads
-                    if threads_trials[i].cost < trial.cost
-                        trial = threads_trials[i]
+                for i in 1:nthreads
+                    if threads_trials[i].tour.cost < trial_result.tour.cost
+                        trial_result = threads_trials[i]
                     end
                 end
 
+                # Update power scores.
+                trial_result.insertion.scores[phase] += trial_result.score
+                trial_result.insertion.count[phase] += 1
+                trial_result.removal.scores[phase] += trial_result.score
+                trial_result.removal.count[phase] += 1
+                trial_result.noise.scores[phase] += trial_result.score
+                trial_result.noise.count[phase] += 1
+
                 # Decide whether or not to accept trial.
-                if accepttrial_noparam(trial.cost, current.cost, param[:prob_accept]) ||
-                   accepttrial(trial.cost, current.cost, temperature)
+                if accepttrial_noparam(
+                    RNGs,
+                    trial_result.tour.cost,
+                    current.cost,
+                    param[:prob_accept],
+                ) || accepttrial(RNGs, trial_result.tour.cost, current.cost, temperature)
                     param[:mode] == "slow" && opt_cycle!(
+                        RNGs,
                         current,
                         dist,
                         sets,
@@ -147,7 +184,7 @@ function solver(problem_instance; args...)
                         "full",
                         start_set,
                     )
-                    current = trial
+                    current = trial_result.tour
                 end
                 if current.cost < best.cost
                     count[:latest_improvement] = 1
@@ -156,6 +193,7 @@ function solver(problem_instance; args...)
                         count[:warm_trial] = 1
                     end
                     opt_cycle!(
+                        RNGs,
                         current,
                         dist,
                         sets,

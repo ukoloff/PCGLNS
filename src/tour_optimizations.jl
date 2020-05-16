@@ -79,6 +79,7 @@ end
 
 
 function moveopt_rand!(
+    RNGs::Array{MersenneTwister, 1},
     tour::Array{Int64, 1},
     dist::Array{Int64, 2},
     sets::Array{Any, 1},
@@ -90,7 +91,7 @@ function moveopt_rand!(
 )
     tour_inds = collect(2:length(tour))
     for i in 1:iters # i = rand(1:length(tour), iters)
-        i = incremental_shuffle!(tour_inds, i)
+        i = incremental_shuffle!(RNGs, tour_inds, i)
         select_vertex = tour[i]
 
         delete_cost = removal_cost(tour, dist, i)
@@ -193,6 +194,7 @@ end
 
 """ repeatedly perform moveopt and reopt_tour until there is no improvement """
 function opt_cycle!(
+    RNGs::Array{MersenneTwister, 1},
     current::Tour,
     dist::Array{Int64, 2},
     sets::Array{Any, 1},
@@ -210,6 +212,7 @@ function opt_cycle!(
             current.tour = reopt_tour(current.tour, dist, sets, member, param, start_set)
         elseif param[:mode] == "fast" || use == "partial"
             moveopt_rand!(
+                RNGs,
                 current.tour,
                 dist,
                 sets,

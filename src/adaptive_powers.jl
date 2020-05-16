@@ -160,8 +160,8 @@ end
 function takes in a set of bins and a weights array of the same length
 and selects a bin with probability equal to weight
 """
-function power_select(powers, total_weight, phase::Symbol)
-    selection = rand() * total_weight[phase]
+function power_select(RNGs::Array{MersenneTwister, 1}, powers, total_weight, phase::Symbol)
+    selection = rand(RNGs[Threads.threadid()]) * total_weight[phase]
     for i in 1:length(powers)
         if selection < powers[i].weight[phase]
             return powers[i]
