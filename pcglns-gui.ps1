@@ -114,4 +114,16 @@ if (!$window.ShowDialog()) {
     exit
 }
 
-$src.Text
+$argz = @(
+    Join-Path (Split-Path $PSCommandPath -Parent) runPCGLNS.jl
+    $src.Text
+    "-mode=$($mode.Text.ToLower())"
+)
+if ($dst.Text) {
+    $argz += @("-output=" + $dst.Text)
+}
+
+julia @argz
+
+Write-Output "Нажмите любую клавищу для завершения..."
+[Console]::ReadKey(1) | Out-Null
