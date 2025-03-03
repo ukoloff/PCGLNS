@@ -67,9 +67,11 @@ function browsePcglns {
     $d.Title = "Выберите файл с моделью PCGLNS для решения"
     $d.Filter = 'Модели PCGLNS|*.pcglns|Все файлы|*.*'
   
-    if ($d.ShowDialog() -eq "OK") {
-        $src.Text = $d.FileName
+    if ($d.ShowDialog() -ne "OK") {
+        return
     }
+    $src.Text = $d.FileName
+    $dst.Text = [System.IO.Path]::ChangeExtension($d.FileName, '.result.txt')
 }
 
 function browseTxt {
@@ -80,12 +82,17 @@ function browseTxt {
     $d.CheckFileExists = 0
     $d.CheckPathExists = 1
   
-    if ($d.ShowDialog() -eq "OK") {
-        $dst.Text = $d.FileName
+    if ($d.ShowDialog() -ne "OK") {
+        return
     }
+    $dst.Text = $d.FileName
 }
 
 function Run {
+    if (!$src.Text -or !(Test-Path $src.Text -PathType Leaf)) {
+        browsePcglns
+        return
+    }
     $window.DialogResult = $true    
 }
 
@@ -97,3 +104,5 @@ if (!$src.Text) {
 if (!$window.ShowDialog()) {
     exit
 }
+
+$src.Text
