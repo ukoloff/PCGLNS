@@ -103,7 +103,7 @@ function Run {
         browsePcglns
         return
     }
-    if (!$overwrite.IsChecked -and (Test-Path $dst.Text -PathType Leaf)) {
+    if ($dst.Text -and !$overwrite.IsChecked -and (Test-Path $dst.Text -PathType Leaf)) {
         $res = $dst.Text
         $res = [System.Windows.Forms.Messagebox]::Show("Overwrite <$res>?", "Backup",
             [System.Windows.Forms.MessageBoxButtons]::YesNo,
