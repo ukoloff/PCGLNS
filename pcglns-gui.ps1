@@ -52,4 +52,41 @@ Add-Type -AssemblyName System.Windows.Forms
 $reader = (New-Object System.Xml.XmlNodeReader $xaml)
 $window = [Windows.Markup.XamlReader]::Load($reader)
 
+# https://blog.it-kb.ru/2014/10/10/wpf-forms-for-powershell-scripts/
+$xaml.SelectNodes("//*[@*[contains(translate(name(.),'n','N'),'Name')]]") | % {
+    Set-Variable -Name ($_.Name) -Value $window.FindName($_.Name) -Scope Global
+}
+ 
+
+$btnSrc.add_click({ browsePcglns })
+$btnDst.add_click({ browseTxt })
+$btnGo.add_click({ Run })
+
+function browsePcglns {
+    $d = New-Object OpenFileDialog
+    $d.Title = "Выберите файл с моделью PCGLNS для решения"
+    $d.Filter = 'Модели PCGLNS|*.pcglns|Все файлы|*.*'
+  
+    if ($d.ShowDialog() -eq "OK") {
+        $src.Text = $d.FileName
+    }
+}
+
+function browseTxt {
+    $d = New-Object OpenFileDialog
+    $d.Title = "Выберите файл для сохранения результатов расчёта"
+    $d.Filter = 'Результаты счёта|*.result.txt|Все файлы|*.*'
+    $d.ValidateNames = 0
+    $d.CheckFileExists = 0
+    $d.CheckPathExists = 1
+  
+    if ($d.ShowDialog() -eq "OK") {
+      $dst.Text = $d.FileName
+    }
+}
+
+function Run {
+  $window.DialogResult = $true    
+}
+
 $window.ShowDialog()
