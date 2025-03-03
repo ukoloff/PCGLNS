@@ -81,12 +81,19 @@ function browseTxt {
     $d.CheckPathExists = 1
   
     if ($d.ShowDialog() -eq "OK") {
-      $dst.Text = $d.FileName
+        $dst.Text = $d.FileName
     }
 }
 
 function Run {
-  $window.DialogResult = $true    
+    $window.DialogResult = $true    
 }
 
-$window.ShowDialog()
+browsePcglns
+if (!$src.Text) {
+    exit
+}
+
+if (!$window.ShowDialog()) {
+    exit
+}
