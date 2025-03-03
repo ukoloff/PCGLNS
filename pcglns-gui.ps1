@@ -81,6 +81,15 @@ function browseTxt {
     $d.ValidateNames = 0
     $d.CheckFileExists = 0
     $d.CheckPathExists = 1
+
+    $p = $dst.Text 
+    if (!$p) {
+        $p = $src.Text
+    }
+    if ($p) {
+        $d.InitialDirectory = Split-Path $p -Parent
+        $d.FileName = Split-Path $p -Leaf
+    }
   
     if ($d.ShowDialog() -ne "OK") {
         return
