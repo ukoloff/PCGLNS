@@ -58,7 +58,7 @@ $xaml.SelectNodes("//*[@*[contains(translate(name(.),'n','N'),'Name')]]") | % {
     Set-Variable -Name ($_.Name) -Value $window.FindName($_.Name) -Scope Global
 }
  
-
+$window.Add_ContentRendered({ browsePcglns })
 $btnSrc.add_click({ browsePcglns })
 $btnDst.add_click({ browseTxt })
 $btnGo.add_click({ Run })
@@ -112,11 +112,6 @@ function Run {
         if ($res -ne "Yes") { return }
     }
     $window.DialogResult = $true    
-}
-
-browsePcglns
-if (!$src.Text) {
-    exit
 }
 
 if (!$window.ShowDialog()) {
