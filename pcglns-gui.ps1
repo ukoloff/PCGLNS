@@ -35,6 +35,7 @@ Add-Type -AssemblyName System.Windows.Forms
         <TextBox x:Name="dst" MaxLength="50"  />
         <Button x:Name="btnDst" Grid.Column="1" Content="Обзор" Padding="5 0" />
     </Grid>
+    <CheckBox x:Name="overwrite" Content="Перезаписать, не задавая вопросов" />
     <TextBlock Text="Режим" />
     <ComboBox x:Name="mode" SelectedIndex="1" Padding="5 1" Margin="0 0 0 5">
         <ComboBoxItem>Fast</ComboBoxItem>
@@ -102,6 +103,14 @@ function Run {
         browsePcglns
         return
     }
+    if (!$overwrite.IsChecked -and (Test-Path $dst.Text -PathType Leaf)) {
+        $res = $dst.Text
+        $res = [System.Windows.Forms.Messagebox]::Show("Overwrite <$res>?", "Backup",
+            [System.Windows.Forms.MessageBoxButtons]::YesNo,
+            [System.Windows.Forms.MessageBoxIcon]::Hand
+        )
+        if ($res -ne "Yes") { return }
+    }
     $window.DialogResult = $true    
 }
 
@@ -122,6 +131,8 @@ $argz = @(
 if ($dst.Text) {
     $argz += @("-output=" + $dst.Text)
 }
+
+"Запускаем эвристику PCGLNS..."
 
 julia @argz
 
