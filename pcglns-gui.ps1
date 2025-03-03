@@ -11,7 +11,7 @@ Add-Type -AssemblyName System.Windows.Forms
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     x:Name="Window"
-    Title="Run PGCLNS"
+    Title="Запуск эвристики PGCLNS"
     Height="200" MinWidth="500"
     WindowStartupLocation="CenterScreen"
     SizeToContent="WidthAndHeight"
@@ -105,7 +105,7 @@ function Run {
     }
     if ($dst.Text -and !$overwrite.IsChecked -and (Test-Path $dst.Text -PathType Leaf)) {
         $res = $dst.Text
-        $res = [System.Windows.Forms.Messagebox]::Show("Overwrite <$res>?", "Backup",
+        $res = [System.Windows.Forms.Messagebox]::Show("Перезаписать файл <$res>?", "PCGLNS",
             [System.Windows.Forms.MessageBoxButtons]::YesNo,
             [System.Windows.Forms.MessageBoxIcon]::Hand
         )
