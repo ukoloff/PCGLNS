@@ -6,6 +6,8 @@ using namespace System.Windows.Forms
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName System.Windows.Forms
 
+$URL = 'https://ukoloff.github.io/j2pcgtsp/'
+
 [xml]$xaml = @"
 <Window
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -42,6 +44,7 @@ Add-Type -AssemblyName System.Windows.Forms
         <ComboBoxItem>Default</ComboBoxItem>
         <ComboBoxItem>Slow</ComboBoxItem>
     </ComboBox>
+    <CheckBox x:Name="svg" IsChecked="True" Content="По окончании открыть страницу визуализации" />
     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" >
         <Button Content="Go!" x:Name="btnGo" IsDefault="True" Padding="9 0"/>
         <Button Content="Закрыть" IsCancel="True" Padding="9 0" Margin="7 0"/>
@@ -150,8 +153,13 @@ julia @argz
 
 Write-Output @"
 
-Просмотр результатов доступен по адресу: https://ukoloff.github.io/j2pcgtsp/
+Просмотр результатов доступен по адресу: $URL
 
 Нажмите любую клавищу для завершения...
 "@
+
+if ($svg.IsChecked) { 
+    Start-Process $URL 
+}
+
 [Console]::ReadKey(1) | Out-Null
