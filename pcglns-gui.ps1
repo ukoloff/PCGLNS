@@ -6,6 +6,8 @@ using namespace System.Windows.Forms
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName System.Windows.Forms
 
+$URL = 'https://ukoloff.github.io/j2pcgtsp/'
+
 [xml]$xaml = @"
 <Window
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -42,6 +44,7 @@ Add-Type -AssemblyName System.Windows.Forms
         <ComboBoxItem>Default</ComboBoxItem>
         <ComboBoxItem>Slow</ComboBoxItem>
     </ComboBox>
+    <CheckBox x:Name="svg" IsChecked="True" Content="По окончании открыть страницу визуализации" />
     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" >
         <Button Content="Go!" x:Name="btnGo" IsDefault="True" Padding="9 0"/>
         <Button Content="Закрыть" IsCancel="True" Padding="9 0" Margin="7 0"/>
@@ -66,7 +69,7 @@ $btnGo.add_click({ Run })
 function browsePcglns {
     $d = New-Object OpenFileDialog
     $d.Title = "Выберите файл с моделью PCGLNS для решения"
-    $d.Filter = 'Модели PCGLNS|*.pcglns|Все файлы|*.*'
+    $d.Filter = 'Модели PCG(TSP/LNS)|*.pcgtsp;*.pcglns|Модели PCGLNS|*.pcglns|Модели PCGTSP|*.pcgtsp|Все файлы|*.*'
   
     if ($d.ShowDialog() -ne "OK") {
         return
@@ -118,9 +121,26 @@ if (!$window.ShowDialog()) {
     exit
 }
 
+$pcglns = $src.Text
+if ($pcglns -match "[.]pcgtsp$") {
+    "Generating PCGLNS from <$pcglns>..."
+    $cd = Get-Location
+    Set-Location (Split-Path $pcglns -Parent)
+    $pcglns = Split-Path $pcglns -Leaf
+    $argz = @(
+        Join-Path (Split-Path $PSCommandPath -Parent) convertToPCGLNS.py
+        $pcglns 
+        $env:TEMP        
+    )
+    python @argz 
+    Set-Location $cd
+    $pcglns = [System.IO.Path]::ChangeExtension($pcglns, '.pcglns')
+    $pcglns = Join-Path $env:TEMP $pcglns
+}
+
 $argz = @(
     Join-Path (Split-Path $PSCommandPath -Parent) runPCGLNS.jl
-    $src.Text
+    $pcglns
     "-mode=$($mode.Text.ToLower())"
 )
 if ($dst.Text) {
@@ -131,5 +151,15 @@ if ($dst.Text) {
 
 julia @argz
 
-Write-Output "Нажмите любую клавищу для завершения..."
+Write-Output @"
+
+Просмотр результатов доступен по адресу: $URL
+
+Нажмите любую клавищу для завершения...
+"@
+
+if ($svg.IsChecked) { 
+    Start-Process $URL 
+}
+
 [Console]::ReadKey(1) | Out-Null
