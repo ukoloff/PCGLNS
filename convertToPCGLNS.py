@@ -29,7 +29,7 @@ def convert_wight_section(text, isSop):
     dims = int(lines[dims_idx].split(" : ")[1])
     for i in range(idx + 1, idx + dims + 1):
         strip_str = lines[i].strip()
-        strip_str = re.sub('\s+', ' ', strip_str)
+        strip_str = re.sub('\\s+', ' ', strip_str)
         float_lst = list(map(float, strip_str.split(' ')))
         int_lst = [round(x) for x in float_lst]
         tmplst = []
