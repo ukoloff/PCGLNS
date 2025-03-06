@@ -118,9 +118,24 @@ if (!$window.ShowDialog()) {
     exit
 }
 
+$pcglns = $src.Text
+if ($pcglns -match "[.]pcgtsp$") {
+    "Generating PCGLNS from <$pcglns>..."
+    Set-Location (Split-Path $pcglns -Parent)
+    $pcglns = Split-Path $pcglns -Leaf
+    $argz = @(
+        Join-Path (Split-Path $PSCommandPath -Parent) convertToPCGLNS.py
+        $pcglns 
+        $env:TEMP        
+    )
+    python @argz 
+    $pcglns = [System.IO.Path]::ChangeExtension($pcglns, '.pcglns')
+    $pcglns = Join-Path $env:TEMP $pcglns
+}
+
 $argz = @(
     Join-Path (Split-Path $PSCommandPath -Parent) runPCGLNS.jl
-    $src.Text
+    $pcglns
     "-mode=$($mode.Text.ToLower())"
 )
 if ($dst.Text) {
