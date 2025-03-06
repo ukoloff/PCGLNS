@@ -66,7 +66,7 @@ $btnGo.add_click({ Run })
 function browsePcglns {
     $d = New-Object OpenFileDialog
     $d.Title = "Выберите файл с моделью PCGLNS для решения"
-    $d.Filter = 'Модели PCGLNS|*.pcglns|Все файлы|*.*'
+    $d.Filter = 'Модели PCG(TSP/LNS)|*.pcgtsp;*.pcglns|Модели PCGLNS|*.pcglns|Модели PCGTSP|*.pcgtsp|Все файлы|*.*'
   
     if ($d.ShowDialog() -ne "OK") {
         return
