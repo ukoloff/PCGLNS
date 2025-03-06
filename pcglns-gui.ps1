@@ -121,6 +121,7 @@ if (!$window.ShowDialog()) {
 $pcglns = $src.Text
 if ($pcglns -match "[.]pcgtsp$") {
     "Generating PCGLNS from <$pcglns>..."
+    $cd = Get-Location
     Set-Location (Split-Path $pcglns -Parent)
     $pcglns = Split-Path $pcglns -Leaf
     $argz = @(
@@ -129,6 +130,7 @@ if ($pcglns -match "[.]pcgtsp$") {
         $env:TEMP        
     )
     python @argz 
+    Set-Location $cd
     $pcglns = [System.IO.Path]::ChangeExtension($pcglns, '.pcglns')
     $pcglns = Join-Path $env:TEMP $pcglns
 }
