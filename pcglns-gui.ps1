@@ -148,5 +148,10 @@ if ($dst.Text) {
 
 julia @argz
 
-Write-Output "Нажмите любую клавищу для завершения..."
+Write-Output @"
+
+Просмотр результатов доступен по адресу: https://ukoloff.github.io/j2pcgtsp/
+
+Нажмите любую клавищу для завершения...
+"@
 [Console]::ReadKey(1) | Out-Null
