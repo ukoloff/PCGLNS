@@ -109,9 +109,9 @@ function Run {
     }
     if ($dst.Text -and !$overwrite.IsChecked -and (Test-Path $dst.Text -PathType Leaf)) {
         $res = $dst.Text
-        $res = [System.Windows.Forms.Messagebox]::Show("Перезаписать файл <$res>?", "PCGLNS",
-            [System.Windows.Forms.MessageBoxButtons]::YesNo,
-            [System.Windows.Forms.MessageBoxIcon]::Hand
+        $res = [Messagebox]::Show("Перезаписать файл <$res>?", "PCGLNS",
+            [MessageBoxButtons]::YesNo,
+            [MessageBoxIcon]::Hand
         )
         if ($res -ne "Yes") { return }
     }
