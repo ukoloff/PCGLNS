@@ -45,6 +45,7 @@ $URL = 'https://ukoloff.github.io/j2pcgtsp/'
         <ComboBoxItem>Slow</ComboBoxItem>
     </ComboBox>
     <CheckBox x:Name="svg" IsChecked="True" Content="По окончании открыть страницу визуализации" />
+    <Separator />
     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" >
         <Button Content="Go!" x:Name="btnGo" IsDefault="True" Padding="9 0"/>
         <Button Content="Закрыть" IsCancel="True" Padding="9 0" Margin="7 0"/>
@@ -108,9 +109,9 @@ function Run {
     }
     if ($dst.Text -and !$overwrite.IsChecked -and (Test-Path $dst.Text -PathType Leaf)) {
         $res = $dst.Text
-        $res = [System.Windows.Forms.Messagebox]::Show("Перезаписать файл <$res>?", "PCGLNS",
-            [System.Windows.Forms.MessageBoxButtons]::YesNo,
-            [System.Windows.Forms.MessageBoxIcon]::Hand
+        $res = [Messagebox]::Show("Перезаписать файл <$res>?", "PCGLNS",
+            [MessageBoxButtons]::YesNo,
+            [MessageBoxIcon]::Hand
         )
         if ($res -ne "Yes") { return }
     }
