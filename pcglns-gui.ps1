@@ -45,6 +45,7 @@ $URL = 'https://ukoloff.github.io/j2pcgtsp/'
         <ComboBoxItem>Slow</ComboBoxItem>
     </ComboBox>
     <CheckBox x:Name="svg" IsChecked="True" Content="По окончании открыть страницу визуализации" />
+    <Separator />
     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" >
         <Button Content="Go!" x:Name="btnGo" IsDefault="True" Padding="9 0"/>
         <Button Content="Закрыть" IsCancel="True" Padding="9 0" Margin="7 0"/>
