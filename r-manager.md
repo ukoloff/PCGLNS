@@ -44,3 +44,32 @@ scoop install main/python
 scoop bucket add versions
 scoop install versions/julia-lts
 ```
+
+## Инструкция
+
+### Sirius
+Для генерации деталей, листов и заданий на раскрой
+может использоваться САПР "Сириус".
+Описание работы с ней не входит в рамки
+данного документа.
+
+Дистрибутив САПР "Сириус"
+доступен в 
+[облаке](https://cloud.mail.ru/public/76fL/qeNrGdK1Q/2021Q1).
+
+САПР "Сириус" использует формат
+[DBS](https://github.com/ukoloff/dbs.js/wiki/DBS)
+для хранения геометрии.
+RoutingManager принимает на вход
+[JSON](https://github.com/ukoloff/dbs.js/tree/master/json-schema)-файл.
+Для конвертации созданы
+[утилиты](https://github.com/ukoloff/dbs.js),
+в частности
+- [dbs2json](https://github.com/ukoloff/dbs.js/tree/master/src/dbs2json) для конвертации
+- [rm-launch](https://github.com/ukoloff/dbs.js/tree/master/src/rm-launch),
+    которая 
+    + конвертирует DBS в JSON
+    + Сразу же запускает RoutingManager
+    + Название запускаемой программы прописано в тексте утилиты и может быть изменено в текстовом редакторе
+    + Утилита по умолчанию добавлена в меню САПР "Сириус" как `Маршрутизация`
+
