@@ -38,12 +38,18 @@ $URL = 'https://ukoloff.github.io/j2pcgtsp/'
         <Button x:Name="btnDst" Grid.Column="1" Content="Обзор" Padding="5 0" />
     </Grid>
     <CheckBox x:Name="overwrite" Content="Перезаписать, не задавая вопросов" />
-    <TextBlock Text="Режим" />
-    <ComboBox x:Name="mode" SelectedIndex="1" Padding="5 1" Margin="0 0 0 5">
-        <ComboBoxItem>Fast</ComboBoxItem>
-        <ComboBoxItem>Default</ComboBoxItem>
-        <ComboBoxItem>Slow</ComboBoxItem>
-    </ComboBox>
+    <GroupBox Header="Параметры алгоритма">
+        <StackPanel>
+            <TextBlock Text="Режим" />
+            <ComboBox x:Name="mode" SelectedIndex="1" Padding="5 1" Margin="0 0 0 5">
+                <ComboBoxItem>Fast</ComboBoxItem>
+                <ComboBoxItem>Default</ComboBoxItem>
+                <ComboBoxItem>Slow</ComboBoxItem>
+            </ComboBox>
+            <TextBlock Text="XXX" />
+            <TextBox x:Name="xxx"  />
+        </StackPanel>
+    </GroupBox>
     <CheckBox x:Name="svg" IsChecked="True" Content="По окончании открыть страницу визуализации" />
     <Separator />
     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" >
