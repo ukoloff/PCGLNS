@@ -38,12 +38,34 @@ $URL = 'https://ukoloff.github.io/j2pcgtsp/'
         <Button x:Name="btnDst" Grid.Column="1" Content="Обзор" Padding="5 0" />
     </Grid>
     <CheckBox x:Name="overwrite" Content="Перезаписать, не задавая вопросов" />
-    <TextBlock Text="Режим" />
-    <ComboBox x:Name="mode" SelectedIndex="1" Padding="5 1" Margin="0 0 0 5">
-        <ComboBoxItem>Fast</ComboBoxItem>
-        <ComboBoxItem>Default</ComboBoxItem>
-        <ComboBoxItem>Slow</ComboBoxItem>
-    </ComboBox>
+    <GroupBox Header="Параметры алгоритма">
+        <StackPanel>
+            <TextBlock Text="Режим" />
+            <ComboBox x:Name="mode" SelectedIndex="1" Padding="5 1" Margin="0 0 0 5">
+                <ComboBoxItem>Fast</ComboBoxItem>
+                <ComboBoxItem>Default</ComboBoxItem>
+                <ComboBoxItem>Slow</ComboBoxItem>
+            </ComboBox>
+            <UniformGrid Columns="4">
+                <StackPanel Margin="1">
+                    <TextBlock Text="Trials: int" />
+                    <TextBox x:Name="trials" />
+                </StackPanel>
+                <StackPanel Margin="1">
+                    <TextBlock Text="Restarts: int" />
+                    <TextBox x:Name="restarts" />
+                </StackPanel>
+                <StackPanel Margin="1">
+                    <TextBlock Text="Epsilon: float" />
+                    <TextBox x:Name="epsilon" />
+                </StackPanel>
+                <StackPanel Margin="1">
+                    <TextBlock Text="Reopt: float" />
+                    <TextBox x:Name="reopt" />
+                </StackPanel>
+            </UniformGrid>
+        </StackPanel>
+    </GroupBox>
     <CheckBox x:Name="svg" IsChecked="True" Content="По окончании открыть страницу визуализации" />
     <Separator />
     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" >
@@ -58,7 +80,8 @@ $reader = (New-Object System.Xml.XmlNodeReader $xaml)
 $window = [Windows.Markup.XamlReader]::Load($reader)
 
 # https://blog.it-kb.ru/2014/10/10/wpf-forms-for-powershell-scripts/
-$xaml.SelectNodes("//*[@*[contains(translate(name(.),'n','N'),'Name')]]") | % {
+$xaml.SelectNodes("//*[@*[contains(translate(name(.),'n','N'),'Name')]]") | 
+ForEach-Object {
     Set-Variable -Name ($_.Name) -Value $window.FindName($_.Name) -Scope Global
 }
  
@@ -102,7 +125,33 @@ function browseTxt {
     $dst.Text = $d.FileName
 }
 
+function checkParams() {
+    $checks = @{
+        trials   = '\d*'
+        restarts = '\d*'
+        epsilon  = '[01]|0[.]\d+'
+        reopt    = '[01]|0[.]\d+'
+    }
+    $res = @()
+    foreach ($x in $checks.GetEnumerator()) {
+        $control = Get-Variable $x.Name -ValueOnly
+        $v = $control.Text.Trim()
+        if (!$v) {
+            continue
+        }
+        if ($v -notmatch "^($($x.Value))$") {
+            $null = $control.Focus()
+            return $null
+        }
+        $res += @("-$($x.Name)=$v")
+    }
+    return $res
+}
+
 function Run {
+    $z = checkParams
+    if ($null -eq $z) { return }
+
     if (!$src.Text -or !(Test-Path $src.Text -PathType Leaf)) {
         browsePcglns
         return
@@ -147,6 +196,8 @@ $argz = @(
 if ($dst.Text) {
     $argz += @("-output=" + $dst.Text)
 }
+
+$argz += checkParams
 
 "Запускаем эвристику PCGLNS..."
 
