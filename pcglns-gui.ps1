@@ -80,7 +80,8 @@ $reader = (New-Object System.Xml.XmlNodeReader $xaml)
 $window = [Windows.Markup.XamlReader]::Load($reader)
 
 # https://blog.it-kb.ru/2014/10/10/wpf-forms-for-powershell-scripts/
-$xaml.SelectNodes("//*[@*[contains(translate(name(.),'n','N'),'Name')]]") | % {
+$xaml.SelectNodes("//*[@*[contains(translate(name(.),'n','N'),'Name')]]") | 
+ForEach-Object {
     Set-Variable -Name ($_.Name) -Value $window.FindName($_.Name) -Scope Global
 }
  
