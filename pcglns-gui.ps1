@@ -46,8 +46,24 @@ $URL = 'https://ukoloff.github.io/j2pcgtsp/'
                 <ComboBoxItem>Default</ComboBoxItem>
                 <ComboBoxItem>Slow</ComboBoxItem>
             </ComboBox>
-            <TextBlock Text="XXX" />
-            <TextBox x:Name="xxx"  />
+            <UniformGrid Columns="4">
+                <StackPanel Margin="1">
+                    <TextBlock Text="Trials" />
+                    <TextBox x:Name="trials" />
+                </StackPanel>
+                <StackPanel Margin="1">
+                    <TextBlock Text="Restarts" />
+                    <TextBox x:Name="restarts" />
+                </StackPanel>
+                <StackPanel Margin="1">
+                    <TextBlock Text="Epsilon" />
+                    <TextBox x:Name="epsilon" />
+                </StackPanel>
+                <StackPanel Margin="1">
+                    <TextBlock Text="Reopt" />
+                    <TextBox x:Name="reopt" />
+                </StackPanel>
+            </UniformGrid>
         </StackPanel>
     </GroupBox>
     <CheckBox x:Name="svg" IsChecked="True" Content="По окончании открыть страницу визуализации" />
