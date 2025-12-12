@@ -125,7 +125,33 @@ function browseTxt {
     $dst.Text = $d.FileName
 }
 
+function checkParams() {
+    $checks = @{
+        trials   = '\d*'
+        restarts = '\d*'
+        epsilon  = '[01]|0[.]\d+'
+        reopt    = '[01]|0[.]\d+'
+    }
+    $res = @()
+    foreach ($x in $checks.GetEnumerator()) {
+        $control = Get-Variable $x.Name -ValueOnly
+        $v = $control.Text.Trim()
+        if (!$v) {
+            continue
+        }
+        if ($v -notmatch "^($($x.Value))$") {
+            $null = $control.Focus()
+            return $null
+        }
+        $res += @("-$($x.Name)=$v")
+    }
+    return $res
+}
+
 function Run {
+    $z = checkParams
+    if ($null -eq $z) { return }
+
     if (!$src.Text -or !(Test-Path $src.Text -PathType Leaf)) {
         browsePcglns
         return
@@ -170,6 +196,8 @@ $argz = @(
 if ($dst.Text) {
     $argz += @("-output=" + $dst.Text)
 }
+
+$argz += checkParams
 
 "Запускаем эвристику PCGLNS..."
 
