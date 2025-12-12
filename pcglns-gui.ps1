@@ -48,19 +48,19 @@ $URL = 'https://ukoloff.github.io/j2pcgtsp/'
             </ComboBox>
             <UniformGrid Columns="4">
                 <StackPanel Margin="1">
-                    <TextBlock Text="Trials" />
+                    <TextBlock Text="Trials: int" />
                     <TextBox x:Name="trials" />
                 </StackPanel>
                 <StackPanel Margin="1">
-                    <TextBlock Text="Restarts" />
+                    <TextBlock Text="Restarts: int" />
                     <TextBox x:Name="restarts" />
                 </StackPanel>
                 <StackPanel Margin="1">
-                    <TextBlock Text="Epsilon" />
+                    <TextBlock Text="Epsilon: float" />
                     <TextBox x:Name="epsilon" />
                 </StackPanel>
                 <StackPanel Margin="1">
-                    <TextBlock Text="Reopt" />
+                    <TextBlock Text="Reopt: float" />
                     <TextBox x:Name="reopt" />
                 </StackPanel>
             </UniformGrid>
